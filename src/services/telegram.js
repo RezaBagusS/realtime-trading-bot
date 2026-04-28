@@ -78,20 +78,37 @@ function init() {
     }
   });
 
-  bot.onText(/\/start/, (msg) => {
+  // Command: /help
+  bot.onText(/\/help/i, (msg) => {
     bot.sendMessage(msg.chat.id, 
-      `🤖 *IDX Smart Signal Bot v2.6*\n\n` +
-      `**Analisa Instan:**\n` +
-      `🔍 \`/cek [ticker]\` - Analisa 1H & Daily\n\n` +
-      `**Pengaturan Watchlist (Screener):**\n` +
-      `➕ \`/add [ticker]\` - Pantau saham baru\n` +
-      `➖ \`/del [ticker]\` - Hapus pantauan\n` +
-      `📋 \`/list\` - Cek daftar pantauan`, 
+      `📖 *PANDUAN PENGGUNAAN BOT ANALYST v2.6*\n\n` +
+      `Bot ini membantu Anda mendeteksi peluang trading di bursa IDX dengan teknologi **Double-Scan** (1H & Daily).\n\n` +
+      `⚡️ **PERINTAH ANALISA**\n` +
+      `• \`/cek [TICKER]\` : Melakukan scan mendalam pada timeframe 1 Jam & Daily. Bot akan memberikan rekomendasi strategi terbaik.\n` +
+      `  _Contoh: /cek BBCA_\n\n` +
+      `📡 **MANAJEMEN RADAR (AUTO-SCREENER)**\n` +
+      `Bot akan men-scan daftar saham ini setiap jam (09:00 - 16:00 WIB).\n` +
+      `• \`/add [TICKER]\` : Menambah saham ke radar.\n` +
+      `• \`/del [TICKER]\` : Menghapus saham dari radar.\n` +
+      `• \`/list\` : Melihat daftar saham yang sedang dipantau.\n\n` +
+      `📊 **CARA MEMBACA SINYAL**\n` +
+      `• *Technical Score:* Akurasi sinyal (0-100). Di atas 70 dianggap sinyal **BUY** yang valid.\n` +
+      `• *Trading Plan:* Titik Entry, TP, dan SL dihitung otomatis berdasarkan manajemen risiko.\n\n` +
+      `⚠️ *Disclaimer:* Investasi saham berisiko. Bot ini hanyalah alat bantu teknikal, bukan perintah jual/beli mutlak.`, 
       { parse_mode: 'Markdown' }
     );
   });
 
-  logger.info('Telegram Service Initialized with Dynamic Watchlist');
+  bot.onText(/\/start/, (msg) => {
+    bot.sendMessage(msg.chat.id, 
+      `🤖 *Selamat Datang di IDX Smart Signal Bot!*\n\n` +
+      `Saya adalah asisten trading pribadi Anda. Saya akan memantau pasar dan membantu Anda menemukan titik entry terbaik.\n\n` +
+      `Ketik \`/help\` untuk melihat panduan lengkap penggunaan bot.`, 
+      { parse_mode: 'Markdown' }
+    );
+  });
+
+  logger.info('Telegram Service Initialized with Help Command');
 }
 
 module.exports = { init, bot };
