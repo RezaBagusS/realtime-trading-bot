@@ -5,13 +5,11 @@ function calculateScore(data, strategy) {
   let score = 50;
   let reasons = [];
 
-  // 1. LEADING SIGNAL: Bullish Divergence (High Priority)
   if (data.divergence) {
     score += 35;
     reasons.push('🏹 Leading Signal: Bullish Divergence');
   }
 
-  // 2. LAGGING CONFIRMATION: StochRSI Crossover
   if (data.stochK < 30) {
     if (data.stochPrevK < data.stochPrevD && data.stochK > data.stochD) {
       score += 20; 
@@ -24,7 +22,6 @@ function calculateScore(data, strategy) {
     reasons.push('StochRSI Overbought');
   }
 
-  // 3. TREND FILTER
   if (data.ema20 > data.ema50) {
     score += 15;
   } else {
@@ -32,17 +29,15 @@ function calculateScore(data, strategy) {
     reasons.push('Tren Menurun (EMA20 < EMA50)');
   }
 
-  // 4. MOMENTUM MACD
   const macd = indicators.calculateMACD(data.rawHistory);
   if (macd.hist > 0) {
     score += 15;
     reasons.push('Momentum MACD Positif');
   }
 
-  // 5. PRICE ACTION
   const distToSupport = (data.price - data.support) / data.support;
   if (distToSupport < 0.03) {
-    score += 10;
+    score += 15;
     reasons.push('Dekat Support');
   }
 
@@ -84,23 +79,40 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
   const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
   const scoreBar = '💊'.repeat(Math.round(bestScore.total / 10)) + '⚪'.repeat(10 - Math.round(bestScore.total / 10));
 
+  // TACTICAL ENTRY LOGIC
+  let entryAdvice = "Market Buy";
+  let entryArea = `Rp ${bestData.price.toLocaleString('id-ID')}`;
+  
+  const distToSupport = (bestData.price - bestData.support) / bestData.support;
+  const distToResist = (bestData.resistance - bestData.price) / bestData.price;
+
+  if (distToSupport < 0.04) {
+    entryAdvice = "Buy on Weakness (Antri di Support)";
+    entryArea = `Rp ${bestData.support.toLocaleString('id-ID')} - Rp ${Math.floor(bestData.price).toLocaleString('id-ID')}`;
+  } else if (distToResist < 0.015) {
+    entryAdvice = "Buy on Breakout (Tunggu Tembus Resist)";
+    entryArea = `Rp ${Math.floor(bestData.resistance + 2).toLocaleString('id-ID')} (Confirmed)`;
+  } else if (bestData.divergence) {
+    entryAdvice = "Speculative Buy (Early Reversal)";
+  }
+
   let msg = `${category.color} *${category.label} — $${ticker.toUpperCase()}*\n` +
             `🎯 *REKOMENDASI: ${recommendation}* ${recEmoji}\n\n` +
-            `💰 *Harga:* Rp ${bestData.price.toLocaleString('id-ID')}\n` +
+            `💰 *Harga Saat Ini:* Rp ${bestData.price.toLocaleString('id-ID')}\n` +
             `📊 *Technical Score:* \`${bestScore.total}/100\`\n` +
             `\`[${scoreBar}]\`\n\n`;
 
   if (bestScore.total >= 75) {
-    const entry = bestData.price;
-    const sl = Math.floor(entry * (1 - bestStrategy.risk.sl));
-    const tp1 = Math.floor(entry * (1 + bestStrategy.risk.tp1));
-    const tp2 = Math.floor(entry * (1 + bestStrategy.risk.tp2));
+    const entryBase = bestData.price;
+    const sl = Math.floor(bestData.support * 0.98); // SL 2% di bawah support nyata
+    const tp1 = Math.floor(entryBase * (1 + bestStrategy.risk.tp1));
+    const tp2 = Math.floor(entryBase * (1 + bestStrategy.risk.tp2));
     
-    msg += `🚀 *TRADING PLAN:* (${bestStrategy.timeframe === 'D' ? 'Swing' : 'Scalp'})\n` +
-           `• *Entry:* \`Rp ${entry.toLocaleString('id-ID')}\`\n` +
-           `• *TP 1:* \`Rp ${tp1.toLocaleString('id-ID')}\` (+${(bestStrategy.risk.tp1*100).toFixed(0)}%)\n` +
-           `• *TP 2:* \`Rp ${tp2.toLocaleString('id-ID')}\` (+${(bestStrategy.risk.tp2*100).toFixed(0)}%)\n` +
-           `• *Stop Loss:* \`Rp ${sl.toLocaleString('id-ID')}\` (-${(bestStrategy.risk.sl*100).toFixed(0)}%)\n\n`;
+    msg += `💡 *TACTICAL ADVICE: ${entryAdvice}*\n` +
+           `📍 *Area Entry:* \`${entryArea}\`\n` +
+           `🎯 *Target TP 1:* \`Rp ${tp1.toLocaleString('id-ID')}\`\n` +
+           `🎯 *Target TP 2:* \`Rp ${tp2.toLocaleString('id-ID')}\`\n` +
+           `🛡️ *Stop Loss:* \`Rp ${sl.toLocaleString('id-ID')}\` (Exit Plan)\n\n`;
   }
 
   msg += `📝 *Alasan:* \n${bestScore.reasons.map(r => `• ${r}`).join('\n')}\n\n` +
