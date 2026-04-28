@@ -1,0 +1,22 @@
+# Secrets
+.env
+*.env.local
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Diagnostic scripts (opsional, bisa dihapus jika tidak perlu di-push)
+inspect-rsi.js
+get-chat-id.js
+test-send.js
+debug-rsi.js
