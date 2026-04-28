@@ -13,8 +13,8 @@ async function handleCommand(msg, ticker, mode) {
   const loading = await bot.sendMessage(msg.chat.id, `🔍 Menganalisa *$${ticker}* untuk mode *${strategy.name}*...`, { parse_mode: 'Markdown' });
 
   try {
-    const { rsi, price } = await tvService.analyze(ticker, strategy);
-    const report = formatter.format(ticker, rsi, price, strategy);
+    const data = await tvService.analyze(ticker, strategy);
+    const report = formatter.format(ticker, data, strategy);
 
     await bot.editMessageText(report, {
       chat_id: msg.chat.id,

@@ -4,13 +4,14 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 
 ---
 
-## 🟢 FASE 1: The Pro Trader (Current Focus - Short Term)
+## 🟢 FASE 1: The Pro Trader (Active)
 **Tujuan:** Membangun akurasi sinyal dan sistem monitoring otomatis.
 - [x] **Modular Refactoring:** Struktur kode skalabel.
 - [x] **Dual Focus Mode:** Scalping (1H) & Swing (Daily).
-- [ ] **Technical Upgrade:**
-    - Tambahkan konfirmasi **EMA 20/50/200** (Golden Cross / Death Cross).
-    - Tambahkan konfirmasi **MACD** & **Volume Spike**.
+- [x] **Technical Score System (v2.2):**
+    - [x] Konfirmasi **EMA 20 & EMA 50**.
+    - [x] Analisa **Volume Spike** (Volume vs Avg 20).
+    - [x] **Scoring Engine (0-100)** & Kategorisasi Sinyal (Strong Buy - Strong Sell).
 - [ ] **Auto-Screener Engine:**
     - Sistem yang otomatis scan Top 20 Saham IDX (LQ45) setiap jam.
     - Alert otomatis ke Telegram jika ada saham yang memasuki zona *Oversold*.
