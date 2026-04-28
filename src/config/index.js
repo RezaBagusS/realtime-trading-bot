@@ -28,5 +28,9 @@ module.exports = {
       color: '🟣',
       risk: { sl: 0.05, tp1: 0.10, tp2: 0.20 } // SL 5%, TP 10% & 20%
     }
-  }
+  },
+  watchList: [
+    'BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII', 
+    'GOTO', 'UNVR', 'ADRO', 'AMRT', 'ICBP'
+  ]
 };

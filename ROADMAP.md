@@ -11,10 +11,10 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [x] **Smart Recommendation Engine (v2.4):** 
     - [x] **Double-Scan Parallel:** Analisa 1H & Daily sekaligus.
     - [x] **Auto-Strategy Decision:** Bot memilihkan strategi (Scalp/Swing) terbaik.
-    - [x] **Simplified Command:** Semua fitur terpusat di perintah `/cek`.
-- [ ] **Auto-Screener Engine:**
-    - Sistem yang otomatis scan Top 20 Saham IDX (LQ45) setiap jam.
-    - Alert otomatis ke Telegram jika ada saham yang memasuki zona *Oversold*.
+- [x] **Auto-Screener Engine (v2.5):**
+    - [x] Sistem otomatis scan watchlist LQ45 setiap jam.
+    - [x] **Market Hours Logic:** Hanya jalan saat bursa buka (WIB).
+    - [x] Alert otomatis ke Telegram untuk sinyal BUY/STRONG BUY.
 - [ ] **Basic Backtester:** Script sederhana untuk cek win-rate strategi RSI di 6 bulan terakhir.
 
 ---

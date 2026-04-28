@@ -53,4 +53,4 @@ function init() {
   logger.info('Telegram Service Initialized with Smart Recommendation');
 }
 
-module.exports = { init };
+module.exports = { init, bot };

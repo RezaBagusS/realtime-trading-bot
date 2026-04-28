@@ -1,15 +1,21 @@
 /**
  * MAIN ENTRY POINT
- * Trading Signal Bot v2.1
+ * Trading Signal Bot v2.5
  */
 const telegramService = require('./src/services/telegram');
+const screenerService = require('./src/services/screener');
 const logger = require('./src/utils/logger');
 
 function bootstrap() {
-  logger.info('Starting IDX Signal Bot in Modular Mode...');
+  logger.info('Starting IDX Signal Bot v2.5...');
   
   try {
+    // 1. Inisialisasi Bot Telegram (Command Handlers)
     telegramService.init();
+    
+    // 2. Inisialisasi Auto-Screener LQ45 (Background Task)
+    screenerService.init(telegramService.bot);
+
     logger.success('Bot is live and waiting for commands!');
   } catch (err) {
     logger.error('Failed to start bot:', err);
