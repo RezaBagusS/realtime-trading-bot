@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 const bot = new TelegramBot(config.telegram.token, { polling: true });
 
 async function handleDualCek(msg, ticker) {
-  const loading = await bot.sendMessage(msg.chat.id, `🔍 Melakukan **Double-Scan** untuk *$${ticker}* (1H & Daily)...`, { parse_mode: 'Markdown' });
+  const loading = await bot.sendMessage(msg.chat.id, `🔍 Menganalisa *$${ticker}* (1H & Daily)...`, { parse_mode: 'Markdown' });
 
   try {
     const [scalpData, swingData] = await Promise.all([
@@ -24,10 +24,23 @@ async function handleDualCek(msg, ticker) {
       parse_mode: 'Markdown'
     });
   } catch (err) {
-    await bot.editMessageText(`❌ *Error:* ${err.message}`, {
-      chat_id: msg.chat.id,
-      message_id: loading.message_id,
-      parse_mode: 'Markdown'
+    // Escape karakter Markdown agar tidak error 400
+    const safeError = err.message.replace(/[_*`\[\]]/g, '\\$&');
+    await bot.editMessageText(
+      `❌ *Analisa Gagal*\n` +
+      `Ticker: $${ticker}\n` +
+      `Pesan: \`${safeError}\``, 
+      {
+        chat_id: msg.chat.id,
+        message_id: loading.message_id,
+        parse_mode: 'Markdown'
+      }
+    ).catch(() => {
+      // Fallback jika Markdown tetap gagal
+      bot.editMessageText(`❌ Analisa $${ticker} Gagal: ${err.message}`, {
+        chat_id: msg.chat.id,
+        message_id: loading.message_id
+      });
     });
   }
 }
