@@ -7,13 +7,11 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 ## 🟢 FASE 1: The Pro Trader (Active)
 **Tujuan:** Membangun akurasi sinyal dan sistem monitoring otomatis.
 - [x] **Modular Refactoring:** Struktur kode skalabel.
-- [x] **Dual Focus Mode:** Scalping (1H) & Swing (Daily).
-- [x] **Technical Score System (v2.3):**
-    - [x] Konfirmasi **EMA 20 & EMA 50**.
-    - [x] Analisa **Volume Spike** (Volume vs Avg 20).
-    - [x] **Scoring Engine (0-100)** & Kategorisasi Sinyal.
-    - [x] **Automated Trading Plan:** Entry, Stop Loss, TP 1 & TP 2.
-    - [x] **Dynamic Reasoning:** Penjelasan alasan sinyal muncul.
+- [x] **Technical Score System (v2.3):** RSI + EMA + Volume + Trading Plan.
+- [x] **Smart Recommendation Engine (v2.4):** 
+    - [x] **Double-Scan Parallel:** Analisa 1H & Daily sekaligus.
+    - [x] **Auto-Strategy Decision:** Bot memilihkan strategi (Scalp/Swing) terbaik.
+    - [x] **Simplified Command:** Semua fitur terpusat di perintah `/cek`.
 - [ ] **Auto-Screener Engine:**
     - Sistem yang otomatis scan Top 20 Saham IDX (LQ45) setiap jam.
     - Alert otomatis ke Telegram jika ada saham yang memasuki zona *Oversold*.
@@ -22,28 +20,15 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 ---
 
 ## 🔵 FASE 2: The AI Quant Analyst (Long Term)
-**Tujuan:** Menggunakan AI untuk sentiment pasar dan interaksi cerdas.
-- [ ] **News Scraper:** Integrasi berita dari portal finansial (CNBC Indonesia/Kontan).
-- [ ] **Gemini AI Integration:**
-    - Fitur `/tanya [ticker]` untuk mendapatkan ringkasan fundamental & teknikal berbasis AI.
-    - Sentiment Analysis: Menilai apakah berita emiten cenderung *Bullish* atau *Bearish*.
-- [ ] **Portfolio Tracker:** Sistem pencatatan jual-beli personal di dalam bot.
+- [ ] **News Scraper:** Integrasi berita finansial Indonesia.
+- [ ] **Gemini AI Integration:** Tanya jawab saham berbasis AI.
+- [ ] **Sentiment Analysis:** Menilai bobot berita emiten.
 
 ---
 
 ## 🟡 FASE 3: The Business Owner (Expansion)
-**Tujuan:** Mengubah bot menjadi platform SaaS (Software as a Service).
-- [ ] **User Management:** Database (SQLite) untuk mengelola data user & status berlangganan.
-- [ ] **Subscription System:** 
-    - Tiering: Free (Limit 3 cek/hari) vs VIP (Unlimited + Auto-Screener).
-    - Payment Integration (Midtrans/Xendit).
-- [ ] **Admin Command:** Broadcast berita/sinyal khusus ke seluruh member VIP.
+- [ ] **User Management & VIP System.**
+- [ ] **Payment Gateway Integration.**
 
 ---
-
-## 📈 Log Perubahan (Changelog)
-- **v2.1 (Current):** Refactoring Modular, Dual-Focus (Scalp/Swing), README Docs.
-- **v1.0:** Initial basic RSI bot.
-
----
-*Roadmap ini akan diperbarui secara berkala seiring berjalannya pengembangan.*
+*Last Update: v2.4 - Smart Recommendation Engine*

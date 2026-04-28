@@ -1,88 +1,42 @@
-# 🚀 IDX Real-time Trading Signal Bot v2.1
+# 🚀 IDX Real-time Trading Signal Bot v2.4
 
-Bot Telegram otomatis untuk menganalisa sinyal trading saham Indonesia (IDX) secara real-time menggunakan indikator **RSI (Relative Strength Index)** langsung dari TradingView. Bot ini dirancang dengan arsitektur modular yang skalabel dan mendukung dua strategi utama: **Scalping** & **Swing Trading**.
+Bot Telegram otomatis untuk menganalisa sinyal trading saham Indonesia (IDX) secara real-time menggunakan indikator **RSI, EMA 20, EMA 50, dan Volume Analysis**. Bot ini menggunakan sistem **Double-Scan** untuk memberikan rekomendasi strategi terbaik (Scalp vs Swing).
 
 ## ✨ Fitur Utama
 
-- **Dual-Focus Strategy**:
-  - 🚀 **Scalping Mode**: Analisa cepat menggunakan Timeframe 1 Jam dan RSI periode 9.
-  - 📈 **Swing Mode**: Analisa jangka panjang menggunakan Timeframe Daily dan RSI periode 14.
-- **On-Demand Analysis**: Cek saham apapun di IDX hanya dengan mengetik perintah di Telegram.
-- **Real-time Data**: Mengambil data langsung dari WebSocket TradingView menggunakan library `@mathieuc/tradingview`.
-- **Modular Architecture**: Kode yang rapi dan terorganisir (Config, Services, Utils, Handlers) sehingga mudah dikembangkan.
-- **Visual Reporting**: Laporan sinyal yang informatif dengan RSI bar visual dan saran analisa otomatis.
-
----
-
-## 🛠️ Teknologi yang Digunakan
-
-- **Runtime**: Node.js
-- **API**: [TradingView-API](https://github.com/mathieuc/tradingview) & [Node Telegram Bot API](https://github.com/yagop/node-telegram-bot-api)
-- **Development**: Nodemon (Auto-restart)
-- **Environment**: Dotenv (Secret management)
-
----
-
-## 🚀 Instalasi & Persiapan
-
-### 1. Clone Repository
-```bash
-git clone https://github.com/RezaBagusS/realtime-trading-bot.git
-cd realtime-trading-bot
-```
-
-### 2. Install Dependensi
-```bash
-npm install
-```
-
-### 3. Konfigurasi Environment
-Salin file `.env.example` menjadi `.env`:
-```bash
-cp .env.example .env
-```
-Isi variabel berikut di dalam `.env`:
-- `TELEGRAM_BOT_TOKEN`: Dapatkan dari [@BotFather](https://t.me/BotFather).
-- `CHANNEL_ID`: Chat ID Telegram Anda.
-- `TRADINGVIEW_SESSION` & `TRADINGVIEW_SIGNATURE`: Dapatkan dari browser cookies (sessionid & sessionid_sign).
+- **Smart Recommendation (Double-Scan)**: Bot menganalisa Timeframe 1 Jam (Scalp) dan Daily (Swing) secara bersamaan dan merekomendasikan strategi yang paling potensial.
+- **Advanced Technical Scoring**: Skor (0-100) berdasarkan kombinasi RSI, Trend EMA, dan Volume Spike.
+- **Automated Trading Plan**: Menghitung otomatis titik Entry, Take Profit 1 & 2, serta Stop Loss.
+- **Dynamic Reasoning**: Memberikan alasan logis di balik setiap sinyal yang muncul.
+- **Zero Study Conflict**: Perhitungan EMA dilakukan secara lokal, menghemat limit akun TradingView Free.
 
 ---
 
 ## 📖 Cara Penggunaan
 
-### Menjalankan Bot
-- **Mode Development** (Auto-restart): `npm run dev`
-- **Mode Production**: `npm start`
-
 ### Perintah Telegram
 - `/start` - Menampilkan panduan penggunaan.
-- `/scalp [TICKER]` - Contoh: `/scalp BBCA` (Mode Jangka Pendek).
-- `/swing [TICKER]` - Contoh: `/swing BBRI` (Mode Jangka Panjang).
-- `/cek [TICKER]` - Alias untuk mode Swing.
+- `/cek [TICKER]` - Analisa mendalam (Double-Scan) 1H & Daily.
+- *(Perintah /scalp dan /swing tetap aktif dan diarahkan ke sistem Double-Scan yang cerdas).*
 
 ---
 
-## 📁 Struktur Project
-```text
-├── src/
-│   ├── config/          # Pengaturan .env & Strategi
-│   ├── services/        # Logika TradingView & Telegram
-│   ├── utils/           # Logger & Formatter Pesan
-│   └── handlers/        # (Optional) Command Router
-├── bot.js               # Titik Masuk Utama
-├── .env                 # File Rahasia (Jangan di-push!)
-└── .gitignore           # Daftar file yang diabaikan Git
+## 🚀 Instalasi & Persiapan
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/RezaBagusS/realtime-trading-bot.git
+cd realtime-trading-bot
+npm install
 ```
 
----
-
-## ⚠️ Disclaimer
-Bot ini dibuat untuk tujuan edukasi dan alat bantu analisa teknikal. Pengambilan keputusan investasi sepenuhnya menjadi tanggung jawab pengguna. **Trading saham memiliki risiko tinggi. Selalu lakukan riset sendiri (DYOR).**
+### 2. Konfigurasi
+Salin `.env.example` ke `.env` dan isi token Anda.
 
 ---
 
 ## 👨‍💻 Kontribusi
-Kontribusi selalu terbuka! Silakan lakukan **Fork** dan kirimkan **Pull Request** jika Anda memiliki ide pengembangan lebih lanjut.
+Silakan lakukan Fork dan kirimkan Pull Request untuk pengembangan lebih lanjut.
 
 ---
 *Created with ❤️ for Indonesian Traders.*
