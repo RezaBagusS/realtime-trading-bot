@@ -1,40 +1,17 @@
+const config = require('../config');
+
 function calculateScore(data, strategy) {
   let score = 50;
   let reasons = [];
 
-  // 1. RSI Score
-  if (data.rsi < strategy.oversold) {
-    score += 25;
-    reasons.push('RSI sudah Oversold (Murah)');
-  } else if (data.rsi > strategy.overbought) {
-    score -= 25;
-    reasons.push('RSI sudah Overbought (Jenuh Beli)');
-  }
+  if (data.rsi < strategy.oversold) { score += 25; reasons.push('RSI Murah (Oversold)'); }
+  else if (data.rsi > strategy.overbought) { score -= 25; reasons.push('RSI Jenuh Beli'); }
 
-  // 2. Trend Score
-  if (data.price > data.ema20) {
-    score += 10;
-    reasons.push('Harga di atas EMA 20 (Trend Up)');
-  } else {
-    score -= 5;
-    reasons.push('Harga di bawah EMA 20 (Trend Down)');
-  }
+  if (data.price > data.ema20) { score += 10; reasons.push('Harga di atas EMA 20'); }
+  if (data.ema20 > data.ema50) { score += 10; reasons.push('Golden Cross EMA'); }
+  if (data.volume > data.avgVol * 1.5) { score += 15; reasons.push('Volume Akumulasi'); }
 
-  if (data.ema20 > data.ema50) {
-    score += 10;
-    reasons.push('EMA 20 > EMA 50 (Golden Cross)');
-  }
-
-  // 3. Volume Score
-  if (data.volume > data.avgVol * 1.5) {
-    score += 15;
-    reasons.push('Volume naik signifikan (Akumulasi)');
-  }
-
-  return {
-    total: Math.min(Math.max(score, 0), 100),
-    reasons: reasons.slice(0, 3) // Ambil 3 alasan utama
-  };
+  return { total: Math.min(Math.max(score, 0), 100), reasons: reasons.slice(0, 3) };
 }
 
 function getCategory(score) {
@@ -45,49 +22,60 @@ function getCategory(score) {
   return { label: '🚨 STRONG SELL', color: '🟥' };
 }
 
-function format(ticker, data, strategy) {
-  const { rsi, price, ema20, ema50, volume, avgVol, prevClose } = data;
-  const scoreData = calculateScore(data, strategy);
-  const category = getCategory(scoreData.total);
-  
-  // Perhitungan Trading Plan
-  const entry = price;
-  const sl = Math.floor(entry * (1 - strategy.risk.sl));
-  const tp1 = Math.floor(entry * (1 + strategy.risk.tp1));
-  const tp2 = Math.floor(entry * (1 + strategy.risk.tp2));
+function formatDualAnalysis(ticker, scalpData, swingData) {
+  const scalpScore = calculateScore(scalpData, config.thresholds.scalp);
+  const swingScore = calculateScore(swingData, config.thresholds.swing);
 
-  const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-  const priceChange = prevClose ? ((price - prevClose) / prevClose * 100).toFixed(2) : '0.00';
-  
-  const barCount = Math.round(scoreData.total / 10);
-  const scoreBar = '💊'.repeat(barCount) + '⚪'.repeat(10 - barCount);
+  // Tentukan Rekomendasi
+  let recommendation = "BELUM ADA MOMENTUM";
+  let recEmoji = "⚖️";
+  let bestData = swingData;
+  let bestStrategy = config.thresholds.swing;
+  let bestScore = swingScore;
 
-  let message = `${category.color} *${category.label} — $${ticker.toUpperCase()}*\n` +
-                `🏢 *${strategy.name}*\n` +
-                `\n` +
-                `💰 *Harga:* Rp ${price?.toLocaleString('id-ID')}\n` +
-                `📈 *Change:* \`${priceChange}%\` | *Vol:* \`${(volume/avgVol).toFixed(1)}x avg\`\n` +
-                `\n` +
-                `📊 *Technical Score:* \`${scoreData.total}/100\`\n` +
-                `\`[${scoreBar}]\`\n` +
-                `\n`;
-
-  // Hanya tampilkan Trading Plan jika sinyal BUY atau STRONG BUY
-  if (scoreData.total >= 70) {
-    message += `🎯 *TRADING PLAN:*\n` +
-               `• *Entry:* \`Rp ${entry.toLocaleString('id-ID')}\` (Current)\n` +
-               `• *TP 1:* \`Rp ${tp1.toLocaleString('id-ID')}\` (+${(strategy.risk.tp1 * 100).toFixed(0)}%)\n` +
-               `• *TP 2:* \`Rp ${tp2.toLocaleString('id-ID')}\` (+${(strategy.risk.tp2 * 100).toFixed(0)}%)\n` +
-               `• *Stop Loss:* \`Rp ${sl.toLocaleString('id-ID')}\` (-${(strategy.risk.sl * 100).toFixed(0)}%)\n` +
-               `\n`;
+  if (scalpScore.total >= 70 || swingScore.total >= 70) {
+    if (swingScore.total >= scalpScore.total) {
+      recommendation = "COCOK UNTUK SWING (JANGKA PANJANG)";
+      recEmoji = "📈";
+    } else {
+      recommendation = "COCOK UNTUK SCALPING (CEPAT)";
+      recEmoji = "🚀";
+      bestData = scalpData;
+      bestStrategy = config.thresholds.scalp;
+      bestScore = scalpScore;
+    }
   }
 
-  message += `📝 *Alasan:* \n${scoreData.reasons.map(r => `• ${r}`).join('\n')}\n` +
-             `\n` +
-             `🕒 _${time} WIB_\n` +
-             `⚠️ _Bukan financial advice._`;
+  const category = getCategory(bestScore.total);
+  const entry = bestData.price;
+  const sl = Math.floor(entry * (1 - bestStrategy.risk.sl));
+  const tp1 = Math.floor(entry * (1 + bestStrategy.risk.tp1));
+  const tp2 = Math.floor(entry * (1 + bestStrategy.risk.tp2));
+  
+  const barCount = Math.round(bestScore.total / 10);
+  const scoreBar = '💊'.repeat(barCount) + '⚪'.repeat(10 - barCount);
+  const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-  return message;
+  let msg = `${category.color} *${category.label} — $${ticker.toUpperCase()}*\n` +
+            `🎯 *REKOMENDASI: ${recommendation}* ${recEmoji}\n\n` +
+            `💰 *Harga:* Rp ${bestData.price.toLocaleString('id-ID')}\n` +
+            `📊 *Technical Score:* \`${bestScore.total}/100\`\n` +
+            `\`[${scoreBar}]\`\n\n`;
+
+  if (bestScore.total >= 70) {
+    msg += `🚀 *TRADING PLAN:* (${bestStrategy.timeframe === 'D' ? 'Swing' : 'Scalp'})\n` +
+           `• *Entry:* \`Rp ${entry.toLocaleString('id-ID')}\`\n` +
+           `• *TP 1:* \`Rp ${tp1.toLocaleString('id-ID')}\` (+${(bestStrategy.risk.tp1*100).toFixed(0)}%)\n` +
+           `• *TP 2:* \`Rp ${tp2.toLocaleString('id-ID')}\` (+${(bestStrategy.risk.tp2*100).toFixed(0)}%)\n` +
+           `• *Stop Loss:* \`Rp ${sl.toLocaleString('id-ID')}\` (-${(bestStrategy.risk.sl*100).toFixed(0)}%)\n\n`;
+  }
+
+  msg += `📝 *Alasan:* \n${bestScore.reasons.map(r => `• ${r}`).join('\n')}\n\n` +
+         `🔍 *Detil Skor:* \n` +
+         `• Scalp (1H): \`${scalpScore.total}\` | Swing (D): \`${swingScore.total}\` \n\n` +
+         `🕒 _${time} WIB_`;
+
+  return msg;
 }
 
-module.exports = { format };
+module.exports = { formatDualAnalysis };
