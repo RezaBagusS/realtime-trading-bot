@@ -14,8 +14,11 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [x] **Auto-Screener Engine (v2.5):**
     - [x] Sistem otomatis scan watchlist setiap jam (Market Hours).
 - [x] **Dynamic Watchlist (v2.6):**
-    - [x] Integrasi **SQLite Database** untuk penyimpanan permanen.
-    - [x] Command Telegram: `/add`, `/del`, dan `/list` untuk kelola radar.
+    - [x] Integrasi **SQLite Database** & Command `/add`, `/del`, `/list`.
+- [x] **Advanced Price Action (v2.7):**
+    - [x] Ganti RSI ke **Stochastic RSI** (Lebih responsif).
+    - [x] **Support & Resistance** Detection otomatis.
+    - [x] **Zero Study Mode:** Semua indikator dihitung lokal.
 - [ ] **Basic Backtester:** Script sederhana untuk cek win-rate strategi RSI di 6 bulan terakhir.
 
 ---

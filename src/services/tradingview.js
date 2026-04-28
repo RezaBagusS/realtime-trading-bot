@@ -1,6 +1,7 @@
 const TradingView = require('@mathieuc/tradingview');
 const config = require('../config');
 const logger = require('../utils/logger');
+const indicators = require('../utils/indicators');
 
 let client = null;
 
@@ -18,6 +19,7 @@ function getClient() {
   return client;
 }
 
+// EMA Calculator Lokal
 function calculateEMA(data, period) {
   if (data.length < period) return null;
   const k = 2 / (period + 1);
@@ -33,53 +35,54 @@ async function analyze(ticker, strategy) {
     const symbol = `IDX:${ticker.toUpperCase()}`;
     const timeout = setTimeout(() => {
       if (chart) chart.delete();
-      reject(new Error(`Timeout ${strategy.name}`));
+      reject(new Error(`Timeout: Koneksi sedang sibuk. Coba 5 detik lagi.`));
     }, 25000);
 
     let chart;
-    let results = { rsi: null, price: null, volume: null, prevClose: null, avgVol: null };
 
     try {
       const tvClient = getClient();
       chart = new tvClient.Session.Chart();
       
+      chart.onError((err) => {
+        clearTimeout(timeout);
+        chart.delete();
+        reject(new Error(`TradingView Error: ${err}`));
+      });
+
+      // Ambil 150 candle untuk analisa S/R dan StochRSI yang akurat
       chart.setMarket(symbol, { timeframe: strategy.timeframe, range: 150 });
 
-      const rsiInd = await TradingView.getIndicator('STD;RSI');
-      rsiInd.setOption('in_0', strategy.rsi_length);
-      const RSI_Study = new chart.Study(rsiInd);
-
-      const checkReady = () => {
-        if (results.rsi !== null && results.price !== null) {
-          const chronData = [...chart.periods].reverse();
-          const final = {
-            ...results,
+      // ZERO STUDY MODE: Semua dihitung lokal dari data candle
+      chart.onUpdate(() => {
+        if (chart.periods.length > 50) {
+          const candles = chart.periods;
+          const chronData = [...candles].reverse();
+          
+          const current = candles[0];
+          const stoch = indicators.calculateStochRSI(chronData, 14);
+          const sr = indicators.findSupportResistance(chronData);
+          
+          const results = {
+            price: current.close,
+            volume: current.volume,
+            prevClose: candles[1]?.close,
+            avgVol: candles.slice(0, 20).reduce((s, c) => s + (c.volume || 0), 0) / 20,
             ema20: calculateEMA(chronData, 20),
             ema50: calculateEMA(chronData, 50),
-            timeframe: strategy.timeframe,
-            strategyName: strategy.name
+            stochK: stoch.k,
+            stochD: stoch.d,
+            support: sr.support,
+            resistance: sr.resistance,
+            timeframe: strategy.timeframe
           };
+
           clearTimeout(timeout);
           chart.delete();
-          resolve(final);
-        }
-      };
-
-      RSI_Study.onUpdate(() => {
-        const val = RSI_Study.periods[0]?.RSI ?? RSI_Study.periods[0]?.plot_0;
-        if (val !== undefined) { results.rsi = val; checkReady(); }
-      });
-
-      chart.onUpdate(() => {
-        if (chart.periods.length > 1) {
-          const candles = chart.periods;
-          results.price = candles[0].close;
-          results.volume = candles[0].volume;
-          results.prevClose = candles[1].close;
-          results.avgVol = candles.slice(0, 20).reduce((s, c) => s + (c.volume || 0), 0) / 20;
-          checkReady();
+          resolve(results);
         }
       });
+
     } catch (err) {
       clearTimeout(timeout);
       if (chart) chart.delete();

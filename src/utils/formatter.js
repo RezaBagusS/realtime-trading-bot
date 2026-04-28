@@ -4,12 +4,34 @@ function calculateScore(data, strategy) {
   let score = 50;
   let reasons = [];
 
-  if (data.rsi < strategy.oversold) { score += 25; reasons.push('RSI Murah (Oversold)'); }
-  else if (data.rsi > strategy.overbought) { score -= 25; reasons.push('RSI Jenuh Beli'); }
+  // 1. Stochastic RSI Score (Ganti RSI)
+  if (data.stochK < 20) {
+    score += 30;
+    reasons.push('StochRSI Oversold (Pantulan)');
+  } else if (data.stochK > 80) {
+    score -= 30;
+    reasons.push('StochRSI Overbought (Jenuh)');
+  }
 
-  if (data.price > data.ema20) { score += 10; reasons.push('Harga di atas EMA 20'); }
-  if (data.ema20 > data.ema50) { score += 10; reasons.push('Golden Cross EMA'); }
-  if (data.volume > data.avgVol * 1.5) { score += 15; reasons.push('Volume Akumulasi'); }
+  // 2. Trend Score
+  if (data.price > data.ema20) score += 10;
+  if (data.ema20 > data.ema50) score += 10;
+
+  // 3. Price Action (Support/Resistance)
+  const distToSupport = (data.price - data.support) / data.support;
+  const distToResist = (data.resistance - data.price) / data.price;
+
+  if (distToSupport < 0.03) {
+    score += 15;
+    reasons.push('Dekat Support Kuat');
+  }
+  if (distToResist < 0.02) {
+    score -= 20;
+    reasons.push('Dekat Resistance (Rawan Koreksi)');
+  }
+
+  // 4. Volume
+  if (data.volume > data.avgVol * 1.5) score += 15;
 
   return { total: Math.min(Math.max(score, 0), 100), reasons: reasons.slice(0, 3) };
 }
@@ -26,7 +48,6 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
   const scalpScore = calculateScore(scalpData, config.thresholds.scalp);
   const swingScore = calculateScore(swingData, config.thresholds.swing);
 
-  // Tentukan Rekomendasi
   let recommendation = "BELUM ADA MOMENTUM";
   let recEmoji = "⚖️";
   let bestData = swingData;
@@ -71,8 +92,11 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
   }
 
   msg += `📝 *Alasan:* \n${bestScore.reasons.map(r => `• ${r}`).join('\n')}\n\n` +
-         `🔍 *Detil Skor:* \n` +
-         `• Scalp (1H): \`${scalpScore.total}\` | Swing (D): \`${swingScore.total}\` \n\n` +
+         `🔍 *Detil Analisa:* \n` +
+         `• StochRSI: \`${bestData.stochK.toFixed(1)}\` \n` +
+         `• Support: \`Rp ${bestData.support.toLocaleString('id-ID')}\` \n` +
+         `• Resist: \`Rp ${bestData.resistance.toLocaleString('id-ID')}\` \n` +
+         `• Scalp: \`${scalpScore.total}\` | Swing: \`${swingScore.total}\` \n\n` +
          `🕒 _${time} WIB_`;
 
   return msg;
