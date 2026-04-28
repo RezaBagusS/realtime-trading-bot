@@ -4,33 +4,30 @@ function calculateScore(data, strategy) {
   let score = 50;
   let reasons = [];
 
-  // 1. Stochastic RSI Score (Ganti RSI)
+  // 1. Stochastic RSI Score (Oversold/Overbought)
   if (data.stochK < 20) {
     score += 30;
-    reasons.push('StochRSI Oversold (Pantulan)');
+    reasons.push('StochRSI Oversold (Sangat Murah)');
   } else if (data.stochK > 80) {
     score -= 30;
-    reasons.push('StochRSI Overbought (Jenuh)');
+    reasons.push('StochRSI Overbought (Jenuh Beli)');
   }
 
-  // 2. Trend Score
+  // 2. Trend & Price Action
   if (data.price > data.ema20) score += 10;
-  if (data.ema20 > data.ema50) score += 10;
-
-  // 3. Price Action (Support/Resistance)
+  
   const distToSupport = (data.price - data.support) / data.support;
   const distToResist = (data.resistance - data.price) / data.price;
 
   if (distToSupport < 0.03) {
     score += 15;
-    reasons.push('Dekat Support Kuat');
+    reasons.push('Dekat Support (Low Risk)');
   }
   if (distToResist < 0.02) {
     score -= 20;
-    reasons.push('Dekat Resistance (Rawan Koreksi)');
+    reasons.push('Dekat Resistance (Waspada)');
   }
 
-  // 4. Volume
   if (data.volume > data.avgVol * 1.5) score += 15;
 
   return { total: Math.min(Math.max(score, 0), 100), reasons: reasons.slice(0, 3) };
@@ -42,6 +39,12 @@ function getCategory(score) {
   if (score >= 40) return { label: '⚖️ NEUTRAL', color: '🟡' };
   if (score >= 20) return { label: '⚠️ SELL', color: '🟠' };
   return { label: '🚨 STRONG SELL', color: '🟥' };
+}
+
+function getStochLabel(k) {
+  if (k <= 20) return 'Oversold (Murah)';
+  if (k >= 80) return 'Overbought (Mahal)';
+  return 'Neutral';
 }
 
 function formatDualAnalysis(ticker, scalpData, swingData) {
@@ -56,10 +59,10 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
 
   if (scalpScore.total >= 70 || swingScore.total >= 70) {
     if (swingScore.total >= scalpScore.total) {
-      recommendation = "COCOK UNTUK SWING (JANGKA PANJANG)";
+      recommendation = "COCOK UNTUK SWING";
       recEmoji = "📈";
     } else {
-      recommendation = "COCOK UNTUK SCALPING (CEPAT)";
+      recommendation = "COCOK UNTUK SCALPING";
       recEmoji = "🚀";
       bestData = scalpData;
       bestStrategy = config.thresholds.scalp;
@@ -68,10 +71,7 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
   }
 
   const category = getCategory(bestScore.total);
-  const entry = bestData.price;
-  const sl = Math.floor(entry * (1 - bestStrategy.risk.sl));
-  const tp1 = Math.floor(entry * (1 + bestStrategy.risk.tp1));
-  const tp2 = Math.floor(entry * (1 + bestStrategy.risk.tp2));
+  const stochLabel = getStochLabel(bestData.stochK);
   
   const barCount = Math.round(bestScore.total / 10);
   const scoreBar = '💊'.repeat(barCount) + '⚪'.repeat(10 - barCount);
@@ -84,6 +84,11 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
             `\`[${scoreBar}]\`\n\n`;
 
   if (bestScore.total >= 70) {
+    const entry = bestData.price;
+    const sl = Math.floor(entry * (1 - bestStrategy.risk.sl));
+    const tp1 = Math.floor(entry * (1 + bestStrategy.risk.tp1));
+    const tp2 = Math.floor(entry * (1 + bestStrategy.risk.tp2));
+    
     msg += `🚀 *TRADING PLAN:* (${bestStrategy.timeframe === 'D' ? 'Swing' : 'Scalp'})\n` +
            `• *Entry:* \`Rp ${entry.toLocaleString('id-ID')}\`\n` +
            `• *TP 1:* \`Rp ${tp1.toLocaleString('id-ID')}\` (+${(bestStrategy.risk.tp1*100).toFixed(0)}%)\n` +
@@ -93,10 +98,9 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
 
   msg += `📝 *Alasan:* \n${bestScore.reasons.map(r => `• ${r}`).join('\n')}\n\n` +
          `🔍 *Detil Analisa:* \n` +
-         `• StochRSI: \`${bestData.stochK.toFixed(1)}\` \n` +
+         `• StochRSI: \`${bestData.stochK.toFixed(1)} (${stochLabel})\` \n` +
          `• Support: \`Rp ${bestData.support.toLocaleString('id-ID')}\` \n` +
-         `• Resist: \`Rp ${bestData.resistance.toLocaleString('id-ID')}\` \n` +
-         `• Scalp: \`${scalpScore.total}\` | Swing: \`${swingScore.total}\` \n\n` +
+         `• Resist: \`Rp ${bestData.resistance.toLocaleString('id-ID')}\` \n\n` +
          `🕒 _${time} WIB_`;
 
   return msg;

@@ -1,18 +1,15 @@
 /**
- * Indicators Utility
- * Menghitung indikator teknikal secara lokal untuk efisiensi.
+ * Indicators Utility v2
+ * Menghitung indikator teknikal dengan Smoothing (3,3).
  */
 
 function calculateRSI(data, period = 14) {
   if (data.length <= period) return null;
-  
-  let gains = 0;
-  let losses = 0;
+  let gains = 0, losses = 0;
 
   for (let i = 1; i <= period; i++) {
     const diff = data[i].close - data[i - 1].close;
-    if (diff >= 0) gains += diff;
-    else losses -= diff;
+    if (diff >= 0) gains += diff; else losses -= diff;
   }
 
   let avgGain = gains / period;
@@ -29,37 +26,39 @@ function calculateRSI(data, period = 14) {
     }
   }
 
-  if (avgLoss === 0) return 100;
-  const rs = avgGain / avgLoss;
-  return 100 - (100 / (1 + rs));
+  return avgLoss === 0 ? 100 : 100 - (100 / (1 + (avgGain / avgLoss)));
 }
 
-function calculateStochRSI(data, period = 14) {
-  if (data.length < period * 2) return { k: 0, d: 0 };
+function calculateStochRSI(data, period = 14, smoothK = 3, smoothD = 3) {
+  if (data.length < period * 2) return { k: 50, d: 50 };
 
+  // 1. Hitung History RSI
   const rsiHistory = [];
   for (let i = period; i <= data.length; i++) {
     const rsi = calculateRSI(data.slice(0, i), period);
     if (rsi !== null) rsiHistory.push(rsi);
   }
 
-  const stochHistory = [];
-  const lookback = period;
-  
-  for (let i = lookback; i <= rsiHistory.length; i++) {
-    const slice = rsiHistory.slice(i - lookback, i);
+  // 2. Hitung History Stoch (Raw)
+  const stochRaw = [];
+  for (let i = period; i <= rsiHistory.length; i++) {
+    const slice = rsiHistory.slice(i - period, i);
     const high = Math.max(...slice);
     const low = Math.min(...slice);
     const current = rsiHistory[i - 1];
-    
-    const stoch = high === low ? 0 : ((current - low) / (high - low)) * 100;
-    stochHistory.push(stoch);
+    stochRaw.push(high === low ? 0 : ((current - low) / (high - low)) * 100);
   }
 
-  // K = SMA 3 dari Stoch
-  const k = stochHistory.slice(-3).reduce((a, b) => a + b, 0) / 3;
-  // D = SMA 3 dari K
-  const d = k; // Sederhana untuk saat ini
+  // 3. Smoothing K (SMA dari Raw)
+  const kHistory = [];
+  for (let i = smoothK; i <= stochRaw.length; i++) {
+    const smaK = stochRaw.slice(i - smoothK, i).reduce((a, b) => a + b, 0) / smoothK;
+    kHistory.push(smaK);
+  }
+
+  // 4. Smoothing D (SMA dari K)
+  const k = kHistory[kHistory.length - 1] || 0;
+  const d = kHistory.slice(-smoothD).reduce((a, b) => a + b, 0) / smoothD;
 
   return { k, d };
 }
