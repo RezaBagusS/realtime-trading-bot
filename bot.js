@@ -1,22 +1,26 @@
 /**
  * MAIN ENTRY POINT
- * Trading Signal Bot v2.5
+ * Trading Signal Bot v2.6
  */
 const telegramService = require('./src/services/telegram');
 const screenerService = require('./src/services/screener');
+const dbService = require('./src/services/database');
 const logger = require('./src/utils/logger');
 
 function bootstrap() {
-  logger.info('Starting IDX Signal Bot v2.5...');
+  logger.info('Starting IDX Signal Bot v2.6 (Database Mode)...');
   
   try {
-    // 1. Inisialisasi Bot Telegram (Command Handlers)
+    // 1. Inisialisasi Database
+    dbService.init();
+
+    // 2. Inisialisasi Bot Telegram
     telegramService.init();
     
-    // 2. Inisialisasi Auto-Screener LQ45 (Background Task)
+    // 3. Inisialisasi Auto-Screener
     screenerService.init(telegramService.bot);
 
-    logger.success('Bot is live and waiting for commands!');
+    logger.success('Bot is live with Dynamic Watchlist support!');
   } catch (err) {
     logger.error('Failed to start bot:', err);
     process.exit(1);

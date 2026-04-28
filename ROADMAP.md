@@ -12,9 +12,10 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
     - [x] **Double-Scan Parallel:** Analisa 1H & Daily sekaligus.
     - [x] **Auto-Strategy Decision:** Bot memilihkan strategi (Scalp/Swing) terbaik.
 - [x] **Auto-Screener Engine (v2.5):**
-    - [x] Sistem otomatis scan watchlist LQ45 setiap jam.
-    - [x] **Market Hours Logic:** Hanya jalan saat bursa buka (WIB).
-    - [x] Alert otomatis ke Telegram untuk sinyal BUY/STRONG BUY.
+    - [x] Sistem otomatis scan watchlist setiap jam (Market Hours).
+- [x] **Dynamic Watchlist (v2.6):**
+    - [x] Integrasi **SQLite Database** untuk penyimpanan permanen.
+    - [x] Command Telegram: `/add`, `/del`, dan `/list` untuk kelola radar.
 - [ ] **Basic Backtester:** Script sederhana untuk cek win-rate strategi RSI di 6 bulan terakhir.
 
 ---
