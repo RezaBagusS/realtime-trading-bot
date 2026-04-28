@@ -5,12 +5,17 @@ function calculateScore(data, strategy) {
   let score = 50;
   let reasons = [];
 
-  // 1. Stochastic RSI + Crossover (30%)
-  if (data.stochK < 20) {
-    score += 15;
+  // 1. LEADING SIGNAL: Bullish Divergence (High Priority)
+  if (data.divergence) {
+    score += 35;
+    reasons.push('🏹 Leading Signal: Bullish Divergence');
+  }
+
+  // 2. LAGGING CONFIRMATION: StochRSI Crossover
+  if (data.stochK < 30) {
     if (data.stochPrevK < data.stochPrevD && data.stochK > data.stochD) {
       score += 20; 
-      reasons.push('Golden Cross StochRSI');
+      reasons.push('StochRSI Golden Cross');
     } else {
       reasons.push('StochRSI Oversold');
     }
@@ -19,27 +24,26 @@ function calculateScore(data, strategy) {
     reasons.push('StochRSI Overbought');
   }
 
-  // 2. Trend Filter (30%)
+  // 3. TREND FILTER
   if (data.ema20 > data.ema50) {
     score += 15;
-    if (data.price > data.ema20) score += 10;
   } else {
-    score -= 25; // Strong Downtrend
+    score -= 25; 
     reasons.push('Tren Menurun (EMA20 < EMA50)');
   }
 
-  // 3. MACD Momentum (20%)
+  // 4. MOMENTUM MACD
   const macd = indicators.calculateMACD(data.rawHistory);
   if (macd.hist > 0) {
     score += 15;
     reasons.push('Momentum MACD Positif');
   }
 
-  // 4. Price Action Support (20%)
+  // 5. PRICE ACTION
   const distToSupport = (data.price - data.support) / data.support;
   if (distToSupport < 0.03) {
     score += 10;
-    reasons.push('Dekat Support Kuat');
+    reasons.push('Dekat Support');
   }
 
   return { total: Math.min(Math.max(score, 0), 100), reasons: reasons.slice(0, 3) };
@@ -54,7 +58,6 @@ function getCategory(score) {
 }
 
 function formatDualAnalysis(ticker, scalpData, swingData) {
-  // Tambahkan rawHistory ke data agar bisa hitung MACD di calculateScore
   const scalpScore = calculateScore(scalpData, config.thresholds.scalp);
   const swingScore = calculateScore(swingData, config.thresholds.swing);
 
@@ -104,7 +107,7 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
          `🔍 *Detil Analisa:* \n` +
          `• StochRSI: \`${bestData.stochK.toFixed(1)}\` \n` +
          `• Support: \`Rp ${bestData.support.toLocaleString('id-ID')}\` \n` +
-         `• Momentum: \`MACD Filtered\` \n\n` +
+         `• Sinyal: \`${bestData.divergence ? '🏹 Divergence Detected' : 'Normal'}\` \n\n` +
          `🕒 _${time} WIB_`;
 
   return msg;

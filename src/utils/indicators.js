@@ -1,7 +1,9 @@
 /**
- * Indicators Utility v3
- * Menambahkan MACD & StochRSI Golden Cross logic.
+ * Indicators Utility v4
+ * Menambahkan Leading Signal: Bullish Divergence Detection.
  */
+
+// ... (calculateEMA & calculateMACD tetap sama)
 
 function calculateEMA(data, period) {
   if (data.length < period) return null;
@@ -14,33 +16,22 @@ function calculateEMA(data, period) {
 }
 
 function calculateMACD(data) {
-  if (data.length < 26 + 9) return { macd: 0, signal: 0, hist: 0 };
-  
-  // Hitung EMA 12 dan EMA 26
+  if (data.length < 35) return { macd: 0, signal: 0, hist: 0 };
   const ema12History = [];
   const ema26History = [];
-  
   for (let i = 26; i <= data.length; i++) {
     const slice = data.slice(0, i);
     ema12History.push(calculateEMA(slice, 12));
     ema26History.push(calculateEMA(slice, 26));
   }
-
   const macdLine = ema12History.map((e12, idx) => e12 - ema26History[idx]);
-  
-  // Signal Line (EMA 9 dari MACD Line)
-  const k = 2 / (9 + 1);
+  const k = 2 / (10);
   let signalLine = macdLine.slice(0, 9).reduce((a, b) => a + b, 0) / 9;
   for (let i = 9; i < macdLine.length; i++) {
     signalLine = (macdLine[i] * k) + (signalLine * (1 - k));
   }
-
   const currentMACD = macdLine[macdLine.length - 1];
-  return {
-    macd: currentMACD,
-    signal: signalLine,
-    hist: currentMACD - signalLine
-  };
+  return { macd: currentMACD, signal: signalLine, hist: currentMACD - signalLine };
 }
 
 function calculateRSI(data, period = 14) {
@@ -89,7 +80,23 @@ function calculateStochRSI(data, period = 14, smoothK = 3, smoothD = 3) {
   const d = kHistory.slice(-smoothD).reduce((a, b) => a + b, 0) / smoothD;
   const prevD = kHistory.slice(-smoothD - 1, -1).reduce((a, b) => a + b, 0) / smoothD;
 
-  return { k, d, prevK, prevD };
+  // LOGIKA LEADING: Bullish Divergence
+  // Mencari lembah harga dan lembah Stoch dalam 20 candle terakhir
+  let divergence = false;
+  if (k < 30) {
+    const recentPrices = data.slice(-20).map(d => d.close);
+    const recentK = kHistory.slice(-20);
+    
+    const minPriceIdx = recentPrices.indexOf(Math.min(...recentPrices));
+    const minKIdx = recentK.indexOf(Math.min(...recentK));
+    
+    // Jika harga terendah baru terjadi, tapi K sudah mulai naik (Higher Low)
+    if (minPriceIdx > minKIdx && recentK[recentK.length-1] > recentK[minKIdx]) {
+      divergence = true;
+    }
+  }
+
+  return { k, d, prevK, prevD, divergence };
 }
 
 function findSupportResistance(data) {
