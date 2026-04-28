@@ -1,23 +1,26 @@
-# 🚀 IDX Real-time Trading Signal Bot v2.4
+# 🚀 IDX Real-time Trading Signal Bot v2.6
 
-Bot Telegram otomatis untuk menganalisa sinyal trading saham Indonesia (IDX) secara real-time menggunakan indikator **RSI, EMA 20, EMA 50, dan Volume Analysis**. Bot ini menggunakan sistem **Double-Scan** untuk memberikan rekomendasi strategi terbaik (Scalp vs Swing).
+Bot Telegram otomatis untuk menganalisa sinyal trading saham Indonesia (IDX) secara real-time menggunakan indikator **RSI, EMA 20, EMA 50, dan Volume Analysis**. Dilengkapi dengan sistem **Double-Scan** dan **Dynamic Watchlist** berbasis database.
 
 ## ✨ Fitur Utama
 
-- **Smart Recommendation (Double-Scan)**: Bot menganalisa Timeframe 1 Jam (Scalp) dan Daily (Swing) secara bersamaan dan merekomendasikan strategi yang paling potensial.
-- **Advanced Technical Scoring**: Skor (0-100) berdasarkan kombinasi RSI, Trend EMA, dan Volume Spike.
-- **Automated Trading Plan**: Menghitung otomatis titik Entry, Take Profit 1 & 2, serta Stop Loss.
-- **Dynamic Reasoning**: Memberikan alasan logis di balik setiap sinyal yang muncul.
-- **Zero Study Conflict**: Perhitungan EMA dilakukan secara lokal, menghemat limit akun TradingView Free.
+- **Dynamic Watchlist (SQLite)**: Kelola daftar saham yang ingin dipantau secara otomatis langsung melalui Telegram. Data tersimpan permanen di database.
+- **Smart Recommendation (Double-Scan)**: Analisa otomatis 1 Jam (Scalp) dan Daily (Swing) untuk memberikan rekomendasi strategi terbaik.
+- **Auto-Screener Engine**: Melakukan pemindaian otomatis terhadap watchlist Anda setiap jam selama jam bursa (09:00 - 16:00 WIB).
+- **Advanced Technical Scoring**: Skor cerdas (0-100) dengan konfirmasi tren dan volume.
+- **Automated Trading Plan**: Menghitung otomatis titik Entry, Take Profit, dan Stop Loss.
 
 ---
 
 ## 📖 Cara Penggunaan
 
-### Perintah Telegram
-- `/start` - Menampilkan panduan penggunaan.
-- `/cek [TICKER]` - Analisa mendalam (Double-Scan) 1H & Daily.
-- *(Perintah /scalp dan /swing tetap aktif dan diarahkan ke sistem Double-Scan yang cerdas).*
+### Perintah Analisa
+- `/cek [TICKER]` - Analisa mendalam 1H & Daily.
+
+### Perintah Manajemen Watchlist (Screener)
+- `/add [TICKER]` - Menambahkan saham ke radar pantauan otomatis.
+- `/del [TICKER]` - Menghapus saham dari radar pantauan.
+- `/list` - Melihat daftar saham yang sedang dipantau.
 
 ---
 
@@ -31,12 +34,14 @@ npm install
 ```
 
 ### 2. Konfigurasi
-Salin `.env.example` ke `.env` dan isi token Anda.
+Salin `.env.example` ke `.env` dan isi token Telegram serta session TradingView Anda.
 
 ---
 
-## 👨‍💻 Kontribusi
-Silakan lakukan Fork dan kirimkan Pull Request untuk pengembangan lebih lanjut.
+## 📁 Struktur Project
+- `src/services/database.js` - Pengelola database SQLite.
+- `src/services/screener.js` - Background task untuk auto-scan.
+- `database.sqlite` - File database lokal (dibuat otomatis).
 
 ---
 *Created with ❤️ for Indonesian Traders.*
