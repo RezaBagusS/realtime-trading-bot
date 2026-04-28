@@ -40,10 +40,10 @@ async function analyze(ticker, strategy) {
       rsiInd.setOption('in_0', strategy.rsi_length);
 
       const ema20Ind = await TradingView.getIndicator('STD;EMA');
-      ema20Ind.setOption('length', 20);
+      ema20Ind.setOption('in_0', 20);
 
       const ema50Ind = await TradingView.getIndicator('STD;EMA');
-      ema50Ind.setOption('length', 50);
+      ema50Ind.setOption('in_0', 50);
 
       // 2. Init Studies
       const RSI_Study = new chart.Study(rsiInd);
