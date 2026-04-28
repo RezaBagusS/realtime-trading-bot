@@ -18,81 +18,88 @@ function getClient() {
   return client;
 }
 
+// EMA Calculator Lokal (Tanpa Study TradingView)
+function calculateEMA(data, period) {
+  if (data.length < period) return null;
+  const k = 2 / (period + 1);
+  // Mulai dengan SMA sederhana untuk candle pertama sebagai basis
+  let ema = data.slice(0, period).reduce((s, c) => s + c.close, 0) / period;
+  // Lanjutkan dengan rumus EMA untuk sisa candle
+  for (let i = period; i < data.length; i++) {
+    ema = (data[i].close * k) + (ema * (1 - k));
+  }
+  return ema;
+}
+
 async function analyze(ticker, strategy) {
   return new Promise(async (resolve, reject) => {
     const symbol = `IDX:${ticker.toUpperCase()}`;
-    const timeout = setTimeout(() => reject(new Error('Timeout data TradingView')), 20000);
+    const timeout = setTimeout(() => {
+      if (chart) chart.delete();
+      reject(new Error(`Timeout: Koneksi sedang sibuk atau market data tidak tersedia. Coba 5 detik lagi.`));
+    }, 25000);
+
+    let chart;
+    let results = { rsi: null, price: null, volume: null, prevClose: null, avgVol: null };
 
     try {
       const tvClient = getClient();
-      const chart = new tvClient.Session.Chart();
+      chart = new tvClient.Session.Chart();
       
       chart.onError((err) => {
         clearTimeout(timeout);
         chart.delete();
-        reject(new Error(`Ticker ${ticker} tidak ditemukan`));
+        reject(new Error(`TradingView Error: ${err}`));
       });
 
-      chart.setMarket(symbol, { timeframe: strategy.timeframe, range: 50 }); // Ambil 50 candle untuk rata-rata volume
+      chart.setMarket(symbol, { timeframe: strategy.timeframe, range: 150 });
 
-      // 1. Setup Indikator
+      // HANYA 1 STUDY (RSI) - Hemat limit akun free
       const rsiInd = await TradingView.getIndicator('STD;RSI');
       rsiInd.setOption('in_0', strategy.rsi_length);
-
-      const ema20Ind = await TradingView.getIndicator('STD;EMA');
-      ema20Ind.setOption('in_0', 20);
-
-      const ema50Ind = await TradingView.getIndicator('STD;EMA');
-      ema50Ind.setOption('in_0', 50);
-
-      // 2. Init Studies
       const RSI_Study = new chart.Study(rsiInd);
-      const EMA20_Study = new chart.Study(ema20Ind);
-      const EMA50_Study = new chart.Study(ema50Ind);
 
-      let results = { rsi: null, ema20: null, ema50: null, volume: null, price: null, prevClose: null, avgVol: null };
-
-      // Helper untuk cek apakah semua data sudah terkumpul
       const checkReady = () => {
-        if (results.rsi !== null && results.ema20 !== null && results.ema50 !== null && results.price !== null) {
+        if (results.rsi !== null && results.price !== null) {
+          // Balik urutan candle (dari terlama ke terbaru) untuk hitung EMA
+          const chronData = [...chart.periods].reverse();
+          
+          const finalResults = {
+            ...results,
+            ema20: calculateEMA(chronData, 20),
+            ema50: calculateEMA(chronData, 50)
+          };
+
           clearTimeout(timeout);
           chart.delete();
-          resolve(results);
+          resolve(finalResults);
         }
       };
 
       RSI_Study.onUpdate(() => {
-        results.rsi = RSI_Study.periods[0]?.RSI ?? RSI_Study.periods[0]?.plot_0;
-        checkReady();
-      });
-
-      EMA20_Study.onUpdate(() => {
-        results.ema20 = EMA20_Study.periods[0]?.EMA ?? EMA20_Study.periods[0]?.plot_0;
-        checkReady();
-      });
-
-      EMA50_Study.onUpdate(() => {
-        results.ema50 = EMA50_Study.periods[0]?.EMA ?? EMA50_Study.periods[0]?.plot_0;
-        checkReady();
+        const val = RSI_Study.periods[0]?.RSI ?? RSI_Study.periods[0]?.plot_0;
+        if (val !== undefined && val !== null) {
+          results.rsi = val;
+          checkReady();
+        }
       });
 
       chart.onUpdate(() => {
-        const candles = chart.periods;
-        if (candles.length > 0) {
-          const current = candles[0];
-          results.price = current.close;
-          results.volume = current.volume;
-          results.prevClose = candles[1]?.close;
+        if (chart.periods.length > 1) {
+          const candles = chart.periods;
+          results.price = candles[0].close;
+          results.volume = candles[0].volume;
+          results.prevClose = candles[1].close;
           
-          // Hitung rata-rata volume 20 candle terakhir
           const volSum = candles.slice(0, 20).reduce((sum, c) => sum + (c.volume || 0), 0);
           results.avgVol = volSum / 20;
+          checkReady();
         }
-        checkReady();
       });
 
     } catch (err) {
       clearTimeout(timeout);
+      if (chart) chart.delete();
       reject(err);
     }
   });

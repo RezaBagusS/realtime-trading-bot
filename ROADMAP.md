@@ -8,10 +8,12 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 **Tujuan:** Membangun akurasi sinyal dan sistem monitoring otomatis.
 - [x] **Modular Refactoring:** Struktur kode skalabel.
 - [x] **Dual Focus Mode:** Scalping (1H) & Swing (Daily).
-- [x] **Technical Score System (v2.2):**
+- [x] **Technical Score System (v2.3):**
     - [x] Konfirmasi **EMA 20 & EMA 50**.
     - [x] Analisa **Volume Spike** (Volume vs Avg 20).
-    - [x] **Scoring Engine (0-100)** & Kategorisasi Sinyal (Strong Buy - Strong Sell).
+    - [x] **Scoring Engine (0-100)** & Kategorisasi Sinyal.
+    - [x] **Automated Trading Plan:** Entry, Stop Loss, TP 1 & TP 2.
+    - [x] **Dynamic Reasoning:** Penjelasan alasan sinyal muncul.
 - [ ] **Auto-Screener Engine:**
     - Sistem yang otomatis scan Top 20 Saham IDX (LQ45) setiap jam.
     - Alert otomatis ke Telegram jika ada saham yang memasuki zona *Oversold*.

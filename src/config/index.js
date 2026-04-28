@@ -16,7 +16,8 @@ module.exports = {
       rsi_length: 9,
       oversold: 30,
       overbought: 70,
-      color: '🔵'
+      color: '🔵',
+      risk: { sl: 0.02, tp1: 0.03, tp2: 0.06 } // SL 2%, TP 3% & 6%
     },
     swing: {
       name: 'SWING (Long-Term)',
@@ -24,7 +25,8 @@ module.exports = {
       rsi_length: 14,
       oversold: 35,
       overbought: 65,
-      color: '🟣'
+      color: '🟣',
+      risk: { sl: 0.05, tp1: 0.10, tp2: 0.20 } // SL 5%, TP 10% & 20%
     }
   }
 };
