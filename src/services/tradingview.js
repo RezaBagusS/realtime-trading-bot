@@ -50,10 +50,9 @@ async function analyze(ticker, strategy) {
         reject(new Error(`TradingView Error: ${err}`));
       });
 
-      // Ambil 150 candle untuk analisa S/R dan StochRSI yang akurat
+      // Ambil 150 candle untuk analisa
       chart.setMarket(symbol, { timeframe: strategy.timeframe, range: 150 });
 
-      // ZERO STUDY MODE: Semua dihitung lokal dari data candle
       chart.onUpdate(() => {
         if (chart.periods.length > 50) {
           const candles = chart.periods;
@@ -72,8 +71,11 @@ async function analyze(ticker, strategy) {
             ema50: calculateEMA(chronData, 50),
             stochK: stoch.k,
             stochD: stoch.d,
+            stochPrevK: stoch.prevK,
+            stochPrevD: stoch.prevD,
             support: sr.support,
             resistance: sr.resistance,
+            rawHistory: chronData, // Simpan history untuk MACD
             timeframe: strategy.timeframe
           };
 
