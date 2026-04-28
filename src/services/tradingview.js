@@ -91,4 +91,27 @@ async function analyze(ticker, strategy) {
   });
 }
 
-module.exports = { analyze };
+async function getHistory(ticker, timeframe = 'D', range = 300) {
+  return new Promise(async (resolve, reject) => {
+    const symbol = `IDX:${ticker.toUpperCase()}`;
+    const tvClient = getClient();
+    const chart = new tvClient.Session.Chart();
+    
+    chart.setMarket(symbol, { timeframe, range });
+    
+    chart.onUpdate(() => {
+      if (chart.periods.length >= range - 10) {
+        const data = [...chart.periods].reverse(); // Terlama -> Terbaru
+        chart.delete();
+        resolve(data);
+      }
+    });
+
+    setTimeout(() => {
+      chart.delete();
+      reject(new Error('Timeout mengambil history'));
+    }, 20000);
+  });
+}
+
+module.exports = { analyze, getHistory };
