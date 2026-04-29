@@ -92,11 +92,27 @@ function init(options = { polling: true }) {
     });
 
     bot.onText(/\/help/i, (msg) => {
-      bot.sendMessage(msg.chat.id, `📖 *PANDUAN BOT*\n\n\`/cek [ticker]\` - Analisa\n\`/add [ticker]\` - Pantau\n\`/list\` - Cek Radar`, { parse_mode: 'Markdown' });
+      const helpMsg = `🤖 *IDX Signal Bot v3.5*\n` +
+                      `_The Pro Trader Edition_\n\n` +
+                      `Selamat datang! Gunakan perintah berikut untuk mengoperasikan bot:\n\n` +
+                      `🔍 *ANALISA & SINYAL*\n` +
+                      `• \`/cek [ticker]\` - Analisa teknikal instan (Scalp/Swing).\n` +
+                      `• Contoh: \`/cek BBCA\`\n\n` +
+                      `📡 *RADAR & WATCHLIST*\n` +
+                      `• \`/add [ticker]\` - Tambahkan saham ke radar pemantauan otomatis.\n` +
+                      `• \`/del [ticker]\` - Hapus saham dari radar.\n` +
+                      `• \`/list\` - Tampilkan semua saham di radar.\n\n` +
+                      `💡 *TIPS*\n` +
+                      `Bot akan otomatis memindai watchlist Anda setiap jam dan memberikan sinyal jika ditemukan momentum yang tepat.\n\n` +
+                      `_Developed with ❤️ for Indonesian Traders_`;
+      bot.sendMessage(msg.chat.id, helpMsg, { parse_mode: 'Markdown' });
     });
 
     bot.onText(/\/start/, (msg) => {
-      bot.sendMessage(msg.chat.id, `🤖 *IDX Smart Signal Bot*\nKetik \`/help\` untuk panduan.`, { parse_mode: 'Markdown' });
+      const startMsg = `🤖 *Halo Trader! Saya adalah IDX Smart Signal Bot.*\n\n` +
+                       `Saya akan membantu Anda mencari momentum terbaik di bursa saham Indonesia menggunakan algoritma *Adaptive ATR* & *Balanced Technical Scoring*.\n\n` +
+                       `Ketik \`/help\` untuk melihat daftar perintah.`;
+      bot.sendMessage(msg.chat.id, startMsg, { parse_mode: 'Markdown' });
     });
   }
 

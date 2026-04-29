@@ -1,7 +1,6 @@
 /**
  * MAIN ENTRY POINT
- * Trading Signal Bot v2.6
- * Trading Signal Bot v3.5
+ * Trading Signal Bot v3.5 (The Pro Trader Edition)
  */
 const telegramService = require('./src/services/telegram');
 const screenerService = require('./src/services/screener');
