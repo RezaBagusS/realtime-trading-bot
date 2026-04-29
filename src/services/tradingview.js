@@ -50,7 +50,6 @@ async function analyze(ticker, strategy) {
         reject(new Error(`TradingView Error: ${err}`));
       });
 
-      // Ambil 150 candle untuk analisa
       chart.setMarket(symbol, { timeframe: strategy.timeframe, range: 150 });
 
       chart.onUpdate(() => {
@@ -61,6 +60,7 @@ async function analyze(ticker, strategy) {
           const current = candles[0];
           const stoch = indicators.calculateStochRSI(chronData, 14);
           const sr = indicators.findSupportResistance(chronData);
+          const atr = indicators.calculateATR(chronData, 14);
           
           const results = {
             price: current.close,
@@ -75,7 +75,8 @@ async function analyze(ticker, strategy) {
             stochPrevD: stoch.prevD,
             support: sr.support,
             resistance: sr.resistance,
-            rawHistory: chronData, // Simpan history untuk MACD
+            atr: atr, // Nilai Volatilitas
+            rawHistory: chronData,
             timeframe: strategy.timeframe
           };
 
@@ -93,7 +94,7 @@ async function analyze(ticker, strategy) {
   });
 }
 
-async function getHistory(ticker, timeframe = 'D', range = 300) {
+async function getHistory(ticker, timeframe = 'D', range = 350) {
   return new Promise(async (resolve, reject) => {
     const symbol = `IDX:${ticker.toUpperCase()}`;
     const tvClient = getClient();
@@ -103,7 +104,7 @@ async function getHistory(ticker, timeframe = 'D', range = 300) {
     
     chart.onUpdate(() => {
       if (chart.periods.length >= range - 10) {
-        const data = [...chart.periods].reverse(); // Terlama -> Terbaru
+        const data = [...chart.periods].reverse(); 
         chart.delete();
         resolve(data);
       }

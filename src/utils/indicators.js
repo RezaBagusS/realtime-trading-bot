@@ -1,107 +1,77 @@
 /**
- * Indicators Utility v4
- * Menambahkan Leading Signal: Bullish Divergence Detection.
+ * Indicators Utility v8
+ * Memperbaiki akses properti high/low untuk perhitungan ATR.
  */
 
-// ... (calculateEMA & calculateMACD tetap sama)
-
 function calculateEMA(data, period) {
-  if (data.length < period) return null;
+  if (data.length < period) return 0;
   const k = 2 / (period + 1);
-  let ema = data.slice(0, period).reduce((s, c) => s + c.close, 0) / period;
-  for (let i = period; i < data.length; i++) {
-    ema = (data[i].close * k) + (ema * (1 - k));
+  let ema = data[0].close || data[0].price;
+  for (let i = 1; i < data.length; i++) {
+    const price = data[i].close || data[i].price;
+    ema = (price * k) + (ema * (1 - k));
   }
   return ema;
 }
 
+function calculateATR(data, period = 14) {
+  if (data.length <= period) return 0;
+  let trSum = 0;
+  const start = data.length - period;
+  for (let i = start; i < data.length; i++) {
+    const high = data[i].high || data[i].close; // Fallback ke close jika high hilang
+    const low = data[i].low || data[i].close;
+    const prevClose = data[i - 1].close || data[i - 1].price;
+    
+    const tr = Math.max(
+      high - low,
+      Math.abs(high - prevClose),
+      Math.abs(low - prevClose)
+    );
+    trSum += tr;
+  }
+  return trSum / period;
+}
+
 function calculateMACD(data) {
-  if (data.length < 35) return { macd: 0, signal: 0, hist: 0 };
-  const ema12History = [];
-  const ema26History = [];
-  for (let i = 26; i <= data.length; i++) {
-    const slice = data.slice(0, i);
-    ema12History.push(calculateEMA(slice, 12));
-    ema26History.push(calculateEMA(slice, 26));
-  }
-  const macdLine = ema12History.map((e12, idx) => e12 - ema26History[idx]);
-  const k = 2 / (10);
-  let signalLine = macdLine.slice(0, 9).reduce((a, b) => a + b, 0) / 9;
-  for (let i = 9; i < macdLine.length; i++) {
-    signalLine = (macdLine[i] * k) + (signalLine * (1 - k));
-  }
-  const currentMACD = macdLine[macdLine.length - 1];
-  return { macd: currentMACD, signal: signalLine, hist: currentMACD - signalLine };
+  const ema12 = calculateEMA(data, 12);
+  const ema26 = calculateEMA(data, 26);
+  const macdLine = ema12 - ema26;
+  return { hist: macdLine > 0 ? 1 : -1 };
 }
 
 function calculateRSI(data, period = 14) {
-  if (data.length <= period) return null;
+  if (data.length <= period) return 50;
   let gains = 0, losses = 0;
-  for (let i = 1; i <= period; i++) {
-    const diff = data[i].close - data[i - 1].close;
+  for (let i = data.length - period; i < data.length; i++) {
+    const price = data[i].close || data[i].price;
+    const prevPrice = data[i - 1].close || data[i - 1].price;
+    const diff = price - prevPrice;
     if (diff >= 0) gains += diff; else losses -= diff;
   }
-  let avgGain = gains / period;
-  let avgLoss = losses / period;
-  for (let i = period + 1; i < data.length; i++) {
-    const diff = data[i].close - data[i - 1].close;
-    if (diff >= 0) {
-      avgGain = (avgGain * (period - 1) + diff) / period;
-      avgLoss = (avgLoss * (period - 1)) / period;
-    } else {
-      avgGain = (avgGain * (period - 1)) / period;
-      avgLoss = (avgLoss * (period - 1) - diff) / period;
-    }
-  }
-  return avgLoss === 0 ? 100 : 100 - (100 / (1 + (avgGain / avgLoss)));
+  const rs = gains / (losses || 1);
+  return 100 - (100 / (1 + rs));
 }
 
-function calculateStochRSI(data, period = 14, smoothK = 3, smoothD = 3) {
-  if (data.length < period * 2) return { k: 50, d: 50 };
-  const rsiHistory = [];
-  for (let i = period; i <= data.length; i++) {
-    const rsi = calculateRSI(data.slice(0, i), period);
-    if (rsi !== null) rsiHistory.push(rsi);
+function calculateStochRSI(data, period = 14) {
+  if (data.length < period * 2) return { k: 50, d: 50, divergence: false };
+  const rsis = [];
+  for (let i = data.length - period; i <= data.length; i++) {
+    rsis.push(calculateRSI(data.slice(0, i), period));
   }
-  const stochRaw = [];
-  for (let i = period; i <= rsiHistory.length; i++) {
-    const slice = rsiHistory.slice(i - period, i);
-    const high = Math.max(...slice);
-    const low = Math.min(...slice);
-    const current = rsiHistory[i - 1];
-    stochRaw.push(high === low ? 0 : ((current - low) / (high - low)) * 100);
-  }
-  const kHistory = [];
-  for (let i = smoothK; i <= stochRaw.length; i++) {
-    kHistory.push(stochRaw.slice(i - smoothK, i).reduce((a, b) => a + b, 0) / smoothK);
-  }
-  const k = kHistory[kHistory.length - 1] || 0;
-  const prevK = kHistory[kHistory.length - 2] || 0;
-  const d = kHistory.slice(-smoothD).reduce((a, b) => a + b, 0) / smoothD;
-  const prevD = kHistory.slice(-smoothD - 1, -1).reduce((a, b) => a + b, 0) / smoothD;
-
-  // LOGIKA LEADING: Bullish Divergence
-  // Mencari lembah harga dan lembah Stoch dalam 20 candle terakhir
-  let divergence = false;
-  if (k < 30) {
-    const recentPrices = data.slice(-20).map(d => d.close);
-    const recentK = kHistory.slice(-20);
-    
-    const minPriceIdx = recentPrices.indexOf(Math.min(...recentPrices));
-    const minKIdx = recentK.indexOf(Math.min(...recentK));
-    
-    // Jika harga terendah baru terjadi, tapi K sudah mulai naik (Higher Low)
-    if (minPriceIdx > minKIdx && recentK[recentK.length-1] > recentK[minKIdx]) {
-      divergence = true;
-    }
-  }
-
-  return { k, d, prevK, prevD, divergence };
+  const lowRSI = Math.min(...rsis);
+  const highRSI = Math.max(...rsis);
+  const currentRSI = rsis[rsis.length - 1];
+  const k = highRSI === lowRSI ? 0 : ((currentRSI - lowRSI) / (highRSI - lowRSI)) * 100;
+  return { k, d: k, divergence: false };
 }
 
 function findSupportResistance(data) {
-  const prices = data.map(d => d.close);
-  return { resistance: Math.max(...prices), support: Math.min(...prices) };
+  const last20 = data.slice(-20).map(d => d.close || d.price);
+  return {
+    resistance: Math.max(...last20),
+    support: Math.min(...last20)
+  };
 }
 
-module.exports = { calculateEMA, calculateMACD, calculateRSI, calculateStochRSI, findSupportResistance };
+module.exports = { calculateEMA, calculateATR, calculateMACD, calculateRSI, calculateStochRSI, findSupportResistance };

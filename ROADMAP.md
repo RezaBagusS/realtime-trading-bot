@@ -5,27 +5,37 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 ---
 
 ## ✅ FASE 1: The Pro Trader (COMPLETED)
-**Tujuan:** Membangun akurasi sinyal dan sistem monitoring otomatis.
-- [x] **Modular Refactoring:** Struktur kode skalabel.
-- [x] **Technical Score System (v2.3):** RSI + EMA + Volume + Trading Plan.
-- [x] **Smart Recommendation Engine (v2.4):** Analisa 1H & Daily sekaligus.
-- [x] **Auto-Screener Engine (v2.5):** Scan watchlist otomatis tiap jam.
-- [x] **Dynamic Watchlist (v2.6):** Integrasi SQLite Database.
-- [x] **Advanced Price Action (v2.7):** StochRSI + Support & Resistance.
-- [x] **Basic Backtester (v1.0):** Simulasi win-rate & profit historis.
+**Tujuan:** Membangun akurasi sinyal dan sistem manajemen resiko otomatis.
+- [x] **Modular Architecture:** Pemisahan logic service, utils, dan formatter.
+- [x] **Balanced Scoring (v3.5):** Integrasi EMA, MACD, dan Breakout detection.
+- [x] **Dual Timeframe Engine:** Deteksi otomatis strategi Scalp (1H) vs Swing (Daily).
+- [x] **Long-Only Logic:** Fokus pada akumulasi (Buy) & Wait, menghapus kebisingan sinyal jual.
+- [x] **Adaptive ATR Exits:** TP/SL dinamis mengikuti volatilitas pasar.
+- [x] **Backtester v1.12:** Simulasi detail dengan log transaksi riil.
 
 ---
 
-## 🔵 FASE 2: The AI Quant Analyst (Next Step)
-- [ ] **News Scraper:** Integrasi berita finansial Indonesia.
-- [ ] **Gemini AI Integration:** Tanya jawab saham & analisa sentimen berita.
-- [ ] **Advanced Backtester:** Report yang lebih detail (Drawdown, Sharpe Ratio).
+## 🔵 FASE 2: The AI Quant Analyst (Current Phase)
+**Tujuan:** Menggabungkan analisa Teknikal dengan Sentimen Berita & AI.
+
+### 1. News Sentiment Engine
+- [ ] **Multi-Source Scraper:** CNBC Indonesia, Kontan, dan Bisnis.com.
+- [ ] **Gemini AI Analysis:** Ekstraksi sentimen (-1 s/d 1) dari berita saham.
+- [ ] **Hybrid Sentiment Score:** Penggabungan analisa teknikal & sentimen berita.
+
+### 2. Risk Management Pro
+- [ ] **IHSG Index Filter:** Deteksi kondisi pasar global sebagai "Kill-Switch".
+- [ ] **Drawdown Calculator:** Menghitung resiko penurunan saldo di backtest.
+
+### 3. Interactive AI
+- [ ] **Command `/tanya`:** Konsultasi portofolio & analisa berita via Gemini.
 
 ---
 
 ## 🟡 FASE 3: The Business Owner (Expansion)
-- [ ] **User Management & VIP System.**
+- [ ] **VIP Subscription System.**
 - [ ] **Payment Gateway Integration.**
+- [ ] **Web Dashboard Analytics.**
 
 ---
-*Last Update: Fase 1 Completed - Final Release v2.7*
+*Last Modified: 29 April 2026 - Phase 1 Finalized*

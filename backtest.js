@@ -1,112 +1,91 @@
 /**
- * BASIC BACKTESTER v1.2
- * Kombinasi Lagging (EMA/MACD) & Leading (Divergence).
+ * BASIC BACKTESTER v1.12
+ * Swing Standard Multipliers (2.5x / 5x ATR).
  */
 require('dotenv').config();
 const tvService = require('./src/services/tradingview');
 const indicators = require('./src/utils/indicators');
-const logger = require('./src/utils/logger');
 
 function getSimulatedScore(snapshot) {
   let score = 50;
-  
-  // 1. LEADING SIGNAL: Bullish Divergence (High Priority)
-  if (snapshot.divergence) {
-    score += 35; // Sangat optimis karena ini sinyal leading
-  }
-
-  // 2. LAGGING CONFIRMATION: StochRSI Crossover
-  if (snapshot.stochK < 30) {
-    if (snapshot.stochPrevK < snapshot.stochPrevD && snapshot.stochK > snapshot.stochD) {
-      score += 20; 
-    }
-  }
-
-  // 3. TREND FILTER
-  if (snapshot.ema20 > snapshot.ema50) {
-    score += 15;
-  } else {
-    score -= 20; 
-  }
-
-  // 4. MOMENTUM
+  if (snapshot.ema20 > snapshot.ema50) score += 20;
+  else score -= 30;
   if (snapshot.macdHist > 0) score += 15;
-
-  // 5. PRICE ACTION
-  const distToSupport = (snapshot.price - snapshot.support) / snapshot.support;
-  if (distToSupport < 0.03) score += 10;
-  
-  const distToResist = (snapshot.resistance - snapshot.price) / snapshot.price;
-  if (distToResist < 0.02) score -= 30;
-
-  return Math.min(Math.max(score, 0), 100);
+  if (snapshot.price >= snapshot.resistance) score += 15;
+  else if (Math.abs(snapshot.price - snapshot.ema20) / snapshot.ema20 < 0.02) score += 10;
+  return score;
 }
 
 async function runBacktest(ticker) {
   try {
     const history = await tvService.getHistory(ticker, 'D', 350);
-    logger.info(`📊 Memulai Backtest Leading + Lagging $${ticker}...`);
+    console.log(`\n🚀 BACKTEST SWING (v1.12): $${ticker.toUpperCase()}`);
+    console.log(`------------------------------------------------------------`);
 
     let trades = [];
     let activeTrade = null;
     let balance = 10000000;
-    const initialBalance = balance;
 
     for (let i = 60; i < history.length; i++) {
       const currentData = history.slice(0, i + 1);
-      const lastCandle = history[i];
-
-      const stoch = indicators.calculateStochRSI(currentData, 14);
-      const sr = indicators.findSupportResistance(currentData);
-      const macd = indicators.calculateMACD(currentData);
+      const prevData = history.slice(0, i);
       
-      const snapshot = {
-        price: lastCandle.close,
-        ema20: indicators.calculateEMA(currentData, 20),
-        ema50: indicators.calculateEMA(currentData, 50),
-        stochK: stoch.k,
-        stochD: stoch.d,
-        stochPrevK: stoch.prevK,
-        stochPrevD: stoch.prevD,
-        divergence: stoch.divergence,
-        macdHist: macd.hist,
-        support: sr.support,
-        resistance: sr.resistance
-      };
+      const stoch = indicators.calculateStochRSI(currentData);
+      const srPrev = indicators.findSupportResistance(prevData);
+      const macd = indicators.calculateMACD(currentData);
+      const atr = indicators.calculateATR(currentData, 14);
+      const ema20 = indicators.calculateEMA(currentData, 20);
+      const ema50 = indicators.calculateEMA(currentData, 50);
+      const price = history[i].close;
+      const date = new Date(history[i].time * 1000).toLocaleDateString('id-ID');
 
+      const snapshot = { price, ema20, ema50, macdHist: macd.hist, resistance: srPrev.resistance, atr };
       const score = getSimulatedScore(snapshot);
 
       if (activeTrade) {
-        const profitPct = (snapshot.price - activeTrade.entryPrice) / activeTrade.entryPrice;
-        if (profitPct >= 0.10 || profitPct <= -0.05) {
+        let reason = '';
+        if (price >= activeTrade.tp) reason = 'HIT TP ✅';
+        else if (price <= activeTrade.sl) reason = 'HIT SL ❌';
+        else if (i === history.length - 1) reason = 'FORCE CLOSE (End of Data) 🔚';
+
+        if (reason) {
+          const profitPct = (price - activeTrade.entryPrice) / activeTrade.entryPrice;
           balance += balance * profitPct;
+          
+          console.log(`🔴 EXIT  | Tgl: ${date} | Harga: ${price.toLocaleString()} | Hasil: ${reason} | Profit: ${(profitPct * 100).toFixed(2)}%`);
+          console.log(`------------------------------------------------------------`);
+          
           trades.push({ profit: profitPct * 100, status: profitPct > 0 ? 'WIN' : 'LOSS' });
           activeTrade = null;
         }
       } 
-      else if (score >= 80) {
-        activeTrade = { entryPrice: snapshot.price };
+      else if (score >= 70) {
+        // SWING MULTIPLIERS: 2.5x ATR untuk SL, 5x ATR untuk TP
+        const sl = Math.floor(price - (2.5 * atr));
+        const tp = Math.floor(price + (5 * atr));
+        
+        activeTrade = { entryPrice: price, sl, tp, entryDate: date };
+        
+        console.log(`🔵 ENTRY | Tgl: ${date} | Harga: ${price.toLocaleString()} | Score: ${score}`);
+        console.log(`   PLAN  | SL: ${sl.toLocaleString()} | TP: ${tp.toLocaleString()} | ATR: ${atr.toFixed(0)}`);
       }
     }
 
     const wins = trades.filter(t => t.status === 'WIN').length;
-    const losses = trades.filter(t => t.status === 'LOSS').length;
-    const winRate = trades.length > 0 ? (wins / trades.length * 100).toFixed(1) : 0;
-    const totalProfit = ((balance - initialBalance) / initialBalance * 100).toFixed(1);
+    const totalProfit = ((balance - 10000000) / 10000000 * 100).toFixed(1);
 
+    console.log(`\n========================================`);
+    console.log(`📈 RINGKASAN HASIL $${ticker.toUpperCase()}`);
     console.log(`========================================`);
-    console.log(`📈 HASIL BACKTEST v1.2 $${ticker.toUpperCase()}`);
-    console.log(`========================================`);
-    console.log(`🔹 Saldo Akhir   : Rp ${balance.toLocaleString('id-ID')}`);
+    console.log(`🔹 Saldo Akhir   : Rp ${Math.round(balance).toLocaleString('id-ID')}`);
     console.log(`🔹 Total Profit  : ${totalProfit}%`);
-    console.log(`🔹 Win Rate     : ${winRate}% (✅ ${wins} | ❌ ${losses})`);
+    console.log(`🔹 Win Rate     : ${trades.length > 0 ? (wins / trades.length * 100).toFixed(1) : 0}%`);
     console.log(`🔹 Total Trades  : ${trades.length}`);
     console.log(`========================================\n`);
 
   } catch (err) {
-    logger.error(`Error: ${err.message}`);
+    console.error(err);
   }
 }
 
-const ticker = process.argv[2] || 'BBCA';
-runBacktest(ticker);
+runBacktest(process.argv[2] || 'BULL');

@@ -1,35 +1,26 @@
-# 🚀 IDX Real-time Trading Signal Bot v2.7
+# 🚀 IDX Smart Trading Bot v3.5
 
-Bot Telegram otomatis untuk menganalisa sinyal trading saham Indonesia (IDX).
+Bot sinyal trading otomatis untuk saham IDX (Indonesia Stock Exchange) yang menggabungkan analisa teknikal pro dengan manajemen resiko adaptif.
 
-## ✨ Fitur Utama
-- **Smart Recommendation (Double-Scan)**: Analisa 1H & Daily sekaligus.
-- **Advanced Price Action**: Stochastic RSI (3,3) + Support & Resistance otomatis.
-- **Auto-Screener Engine**: Monitor watchlist Anda setiap jam (Market Hours).
-- **Basic Backtester**: Uji strategi Anda pada data historis 1 tahun terakhir.
+## ✨ Fitur Utama (Fase 1 Selesai)
+- **Hybrid Analysis:** Menganalisa timeframe 1H (Scalping) dan Daily (Swing) secara bersamaan.
+- **Dynamic Scoring v3.5:** Penilaian teknikal berdasarkan Tren (EMA), Momentum (MACD), dan Struktur (Breakout/Pullback).
+- **Long-Only Strategy:** Dirancang khusus untuk pasar spot (hanya memberikan sinyal BUY).
+- **Adaptive Exits (ATR):** Penentuan Target Profit (TP) dan Stop Loss (SL) otomatis berdasarkan volatilitas tiap saham.
+- **Backtester v1.12:** Simulasi historis detail dengan log transaksi per tanggal untuk memvalidasi strategi.
+- **Dynamic Watchlist:** Kelola saham favorit Anda via database SQLite.
 
----
+## 🛠️ Tech Stack
+- **Node.js:** Runtime utama.
+- **TradingView API:** Sumber data realtime.
+- **SQLite:** Database watchlist.
+- **Telegram Bot API:** Antarmuka notifikasi.
 
-## 📖 Cara Penggunaan
-
-### Perintah Telegram
-- `/cek [TICKER]` - Analisa mendalam (Double-Scan).
-- `/add [TICKER]` - Tambah ke radar screener.
-- `/list` - Cek daftar pantauan.
-
-### Menjalankan Backtest (Terminal)
-Untuk melihat performa strategi di masa lalu:
-```bash
-node backtest.js [TICKER]
-# Contoh: node backtest.js ADRO
-```
+## 📊 Cara Penggunaan
+1. Masukkan API Key Telegram & Gemini di file `.env`.
+2. Jalankan bot: `npm start`.
+3. Gunakan command `/analisa [ticker]` di Telegram untuk cek saham secara instan.
+4. Gunakan `node backtest.js [ticker]` untuk simulasi historis.
 
 ---
-
-## 🚀 Instalasi
-1. Clone repo & `npm install`.
-2. Isi `.env`.
-3. Jalankan `npm run dev`.
-
----
-*Fase 1 Selesai. Siap melangkah ke Fase 2 (AI Analyst).*
+*Developed with ❤️ for Indonesian Traders.*

@@ -1,6 +1,7 @@
 /**
  * MAIN ENTRY POINT
  * Trading Signal Bot v2.6
+ * Trading Signal Bot v3.5
  */
 const telegramService = require('./src/services/telegram');
 const screenerService = require('./src/services/screener');
@@ -8,7 +9,7 @@ const dbService = require('./src/services/database');
 const logger = require('./src/utils/logger');
 
 function bootstrap() {
-  logger.info('Starting IDX Signal Bot v2.6 (Database Mode)...');
+  logger.info('Starting IDX Signal Bot v3.5 (Database Mode)...');
   
   try {
     // 1. Inisialisasi Database

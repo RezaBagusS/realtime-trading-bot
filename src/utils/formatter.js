@@ -1,125 +1,98 @@
 const config = require('../config');
 const indicators = require('./indicators');
 
-function calculateScore(data, strategy) {
-  let score = 50;
+function calculateScore(data) {
+  let score = 50; 
   let reasons = [];
 
-  if (data.divergence) {
-    score += 35;
-    reasons.push('🏹 Leading Signal: Bullish Divergence');
-  }
-
-  if (data.stochK < 30) {
-    if (data.stochPrevK < data.stochPrevD && data.stochK > data.stochD) {
-      score += 20; 
-      reasons.push('StochRSI Golden Cross');
-    } else {
-      reasons.push('StochRSI Oversold');
-    }
-  } else if (data.stochK > 80) {
-    score -= 30;
-    reasons.push('StochRSI Overbought');
-  }
-
+  // 1. TREND
   if (data.ema20 > data.ema50) {
-    score += 15;
+    score += 20;
+    if (data.price > data.ema20) score += 5;
+    reasons.push('Tren Bullish (EMA20 > EMA50)');
   } else {
-    score -= 25; 
-    reasons.push('Tren Menurun (EMA20 < EMA50)');
+    score -= 30;
+    reasons.push('Tren Bearish');
   }
 
+  // 2. MOMENTUM MACD
   const macd = indicators.calculateMACD(data.rawHistory);
   if (macd.hist > 0) {
     score += 15;
     reasons.push('Momentum MACD Positif');
   }
 
-  const distToSupport = (data.price - data.support) / data.support;
-  if (distToSupport < 0.03) {
+  // 3. STRUCTURE
+  if (data.price >= data.resistance) {
     score += 15;
-    reasons.push('Dekat Support');
+    reasons.push('Breakout Resistance Lokal');
+  } else if (Math.abs(data.price - data.ema20) / data.ema20 < 0.02) {
+    score += 10;
+    reasons.push('Area Pullback (Dekat EMA20)');
   }
 
   return { total: Math.min(Math.max(score, 0), 100), reasons: reasons.slice(0, 3) };
 }
 
 function getCategory(score) {
-  if (score >= 90) return { label: '💎 STRONG BUY', color: '🟩' };
-  if (score >= 75) return { label: '✅ BUY', color: '🍀' };
-  if (score >= 40) return { label: '⚖️ NEUTRAL', color: '🟡' };
-  if (score >= 20) return { label: '⚠️ SELL', color: '🟠' };
-  return { label: '🚨 STRONG SELL', color: '🟥' };
+  if (score >= 85) return { label: '💎 STRONG BUY', color: '🟩' };
+  if (score >= 70) return { label: '✅ BUY', color: '🍀' };
+  if (score >= 40) return { label: '⚖️ WAIT & SEE', color: '🟡' };
+  return { label: '🚨 AVOID', color: '🟥' }; // Mengganti SELL menjadi AVOID
 }
 
 function formatDualAnalysis(ticker, scalpData, swingData) {
-  const scalpScore = calculateScore(scalpData, config.thresholds.scalp);
-  const swingScore = calculateScore(swingData, config.thresholds.swing);
+  const scalpScore = calculateScore(scalpData);
+  const swingScore = calculateScore(swingData);
 
-  let recommendation = "BELUM ADA MOMENTUM";
-  let recEmoji = "⚖️";
-  let bestData = swingData;
-  let bestStrategy = config.thresholds.swing;
-  let bestScore = swingScore;
-
-  if (scalpScore.total >= 75 || swingScore.total >= 75) {
-    if (swingScore.total >= scalpScore.total) {
-      recommendation = "COCOK UNTUK SWING";
-      recEmoji = "📈";
-    } else {
-      recommendation = "COCOK UNTUK SCALPING";
-      recEmoji = "🚀";
-      bestData = scalpData;
-      bestStrategy = config.thresholds.scalp;
-      bestScore = scalpScore;
-    }
-  }
-
+  let isSwing = swingScore.total >= scalpScore.total;
+  let bestData = isSwing ? swingData : scalpData;
+  let bestScore = isSwing ? swingScore : scalpScore;
+  
+  const isBuy = bestScore.total >= 70;
   const category = getCategory(bestScore.total);
+  const recommendation = isBuy ? (isSwing ? "SWING TRADING" : "SCALPING") : "BELUM ADA MOMENTUM";
+  
   const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
   const scoreBar = '💊'.repeat(Math.round(bestScore.total / 10)) + '⚪'.repeat(10 - Math.round(bestScore.total / 10));
 
-  // TACTICAL ENTRY LOGIC
-  let entryAdvice = "Market Buy";
-  let entryArea = `Rp ${bestData.price.toLocaleString('id-ID')}`;
-  
-  const distToSupport = (bestData.price - bestData.support) / bestData.support;
-  const distToResist = (bestData.resistance - bestData.price) / bestData.price;
-
-  if (distToSupport < 0.04) {
-    entryAdvice = "Buy on Weakness (Antri di Support)";
-    entryArea = `Rp ${bestData.support.toLocaleString('id-ID')} - Rp ${Math.floor(bestData.price).toLocaleString('id-ID')}`;
-  } else if (distToResist < 0.015) {
-    entryAdvice = "Buy on Breakout (Tunggu Tembus Resist)";
-    entryArea = `Rp ${Math.floor(bestData.resistance + 2).toLocaleString('id-ID')} (Confirmed)`;
-  } else if (bestData.divergence) {
-    entryAdvice = "Speculative Buy (Early Reversal)";
-  }
-
   let msg = `${category.color} *${category.label} — $${ticker.toUpperCase()}*\n` +
-            `🎯 *REKOMENDASI: ${recommendation}* ${recEmoji}\n\n` +
+            `🎯 *REKOMENDASI: ${recommendation}*\n\n` +
             `💰 *Harga Saat Ini:* Rp ${bestData.price.toLocaleString('id-ID')}\n` +
             `📊 *Technical Score:* \`${bestScore.total}/100\`\n` +
             `\`[${scoreBar}]\`\n\n`;
 
-  if (bestScore.total >= 75) {
+  if (isBuy) {
     const entryBase = bestData.price;
-    const sl = Math.floor(bestData.support * 0.98); // SL 2% di bawah support nyata
-    const tp1 = Math.floor(entryBase * (1 + bestStrategy.risk.tp1));
-    const tp2 = Math.floor(entryBase * (1 + bestStrategy.risk.tp2));
+    const atr = bestData.atr;
+    let sl, tp1, tp2, advice, area;
+
+    if (isSwing) {
+      sl = Math.floor(entryBase - (2.5 * atr));
+      tp1 = Math.floor(entryBase + (5 * atr));
+      tp2 = Math.floor(entryBase + (10 * atr));
+      advice = bestData.price >= bestData.resistance ? "Buy on Breakout" : "Buy on Weakness";
+      area = `Rp ${Math.floor(bestData.ema20 || bestData.support).toLocaleString('id-ID')} - Rp ${entryBase.toLocaleString('id-ID')}`;
+    } else {
+      sl = Math.floor(entryBase - (1.5 * atr));
+      tp1 = Math.floor(entryBase + (2 * atr));
+      tp2 = Math.floor(entryBase + (4 * atr));
+      advice = "Fast Entry (Momentum)";
+      area = `Rp ${entryBase.toLocaleString('id-ID')}`;
+    }
     
-    msg += `💡 *TACTICAL ADVICE: ${entryAdvice}*\n` +
-           `📍 *Area Entry:* \`${entryArea}\`\n` +
-           `🎯 *Target TP 1:* \`Rp ${tp1.toLocaleString('id-ID')}\`\n` +
-           `🎯 *Target TP 2:* \`Rp ${tp2.toLocaleString('id-ID')}\`\n` +
-           `🛡️ *Stop Loss:* \`Rp ${sl.toLocaleString('id-ID')}\` (Exit Plan)\n\n`;
+    msg += `🚀 *ADAPTIVE PLAN:*\n` +
+           `💡 *Advice:* ${advice}\n` +
+           `📍 *Area Entry:* \`${area}\`\n` +
+           `🎯 *TP 1:* \`Rp ${tp1.toLocaleString('id-ID')}\` (+${((tp1-entryBase)/entryBase*100).toFixed(1)}%)\n` +
+           `🎯 *TP 2:* \`Rp ${tp2.toLocaleString('id-ID')}\` (+${((tp2-entryBase)/entryBase*100).toFixed(1)}%)\n` +
+           `🛡️ *Stop Loss:* \`Rp ${sl.toLocaleString('id-ID')}\` (-${((entryBase-sl)/entryBase*100).toFixed(1)}%)\n\n`;
   }
 
   msg += `📝 *Alasan:* \n${bestScore.reasons.map(r => `• ${r}`).join('\n')}\n\n` +
-         `🔍 *Detil Analisa:* \n` +
-         `• StochRSI: \`${bestData.stochK.toFixed(1)}\` \n` +
-         `• Support: \`Rp ${bestData.support.toLocaleString('id-ID')}\` \n` +
-         `• Sinyal: \`${bestData.divergence ? '🏹 Divergence Detected' : 'Normal'}\` \n\n` +
+         `🔍 *Detil:* \n` +
+         `• Resist Lokal: \`Rp ${bestData.resistance.toLocaleString('id-ID')}\` \n` +
+         `• ATR: \`Rp ${bestData.atr.toFixed(0)}\` \n\n` +
          `🕒 _${time} WIB_`;
 
   return msg;
