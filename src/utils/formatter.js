@@ -118,4 +118,37 @@ function formatDualAnalysis(ticker, scalpData, swingData, marketStatus = null) {
   return msg;
 }
 
-module.exports = { formatDualAnalysis };
+function formatNews(ticker, newsList, aiSentiment = null) {
+  if (newsList.length === 0) {
+    return `⚠️ Tidak ada berita terbaru ditemukan untuk *$${ticker.toUpperCase()}*.\n\n` +
+           `💡 _Saran: Pastikan kode saham benar. Jika sudah benar, berarti emiten ini sedang tidak memiliki berita signifikan atau pengumuman bursa dalam 30 hari terakhir._`;
+  }
+
+  let msg = `📰 *Berita Terbaru: $${ticker.toUpperCase()}*\n`;
+  msg += `------------------------------------------\n\n`;
+
+  if (aiSentiment) {
+    const aiEmoji = aiSentiment.score > 0.3 ? '🚀' : (aiSentiment.score < -0.3 ? '💀' : '⚖️');
+    const scoreText = (aiSentiment.score * 100).toFixed(0);
+    msg += `🤖 *AI SENTIMENT ANALYSIS:* \`${scoreText}%\` ${aiEmoji}\n`;
+    msg += `📝 _"${aiSentiment.summary}"_\n\n`;
+  }
+
+  newsList.slice(0, 5).forEach((n, i) => {
+    const date = new Date(n.date).toLocaleString('id-ID', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    msg += `${i + 1}. *${n.title}*\n`;
+    msg += `   📅 ${date} | 🌐 _${n.source}_\n`;
+    msg += `   🔗 [Baca Berita](${n.link})\n\n`;
+  });
+
+  msg += `_Data diupdate secara real-time via Google News_`;
+  return msg;
+}
+
+module.exports = { formatDualAnalysis, formatNews };

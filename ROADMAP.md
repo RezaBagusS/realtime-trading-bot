@@ -20,11 +20,11 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 
 ### 1. Market Risk Context
 - [x] **IHSG Global Filter (v3.6):** Sistem "Safety Switch" jika kondisi bursa sedang crash. (COMPLETED)
-- [ ] **Sectoral Pulse:** Deteksi pergerakan modal antar sektor saham.
 
 ### 2. Intelligence Layer
-- [ ] **News Scraper Service:** Integrasi scraper untuk CNBC Indonesia, Kontan, dan Bisnis.com.
-- [ ] **Gemini AI Sentiment Analysis:** Ekstraksi sentimen (-1 s/d 1) dari berita saham.
+- [x] **News Scraper Service (v3.8):** Aggregator berita via Google News RSS (CNBC, Kontan, Investing, Bisnis.com). (COMPLETED)
+- [x] **Gemini AI Sentiment Analysis (v3.9):** Ekstraksi sentimen (-1 s/d 1) menggunakan model Gemini 2.5 Flash. (COMPLETED)
+- [x] **Input Validation & Robust Error Handling (v3.9.5):** Verifikasi ticker real-time dan penanganan error yang user-friendly. (COMPLETED)
 - [ ] **Hybrid Decision Engine:** Gabungan skor teknikal (70%) dan skor sentimen (30%).
 
 ### 3. Professional Metrics
@@ -39,4 +39,4 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [ ] **Web Dashboard Analytics.**
 
 ---
-*Dokumentasi telah disinkronkan dengan Source Code v3.6 - 30 April 2026*
+*Dokumentasi telah disinkronkan dengan Source Code v3.9.5 - 01 Mei 2026*

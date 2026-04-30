@@ -4,6 +4,8 @@ const tvService = require('./tradingview');
 const dbService = require('./database');
 const formatter = require('../utils/formatter');
 const logger = require('../utils/logger');
+const newsService = require('./news');
+const aiService = require('./ai');
 
 let bot;
 
@@ -25,18 +27,26 @@ async function handleDualCek(msg, ticker) {
       parse_mode: 'Markdown'
     });
   } catch (err) {
-    const safeError = err.message.replace(/[_*`\[\]]/g, '\\$&');
+    let errorMessage = err.message;
+    let isSymbolError = false;
+
+    if (err.message.includes('Symbol error') || err.message.includes('ser_1')) {
+      errorMessage = `Emitten *$${ticker}* tidak ditemukan di Bursa Efek Indonesia (IDX).\n\n💡 _Tips: Pastikan kode saham terdiri dari 4 huruf (contoh: BBCA, GOTO)._`;
+      isSymbolError = true;
+    }
+
+    const safeError = errorMessage.replace(/[_*`\[\]]/g, '\\$&');
+    
     await bot.editMessageText(
-      `❌ *Analisa Gagal*\n` +
-      `Ticker: $${ticker}\n` +
-      `Pesan: \`${safeError}\``, 
+      `❌ *Analisa Gagal*\n\n` +
+      `${safeError}`, 
       {
         chat_id: msg.chat.id,
         message_id: loading.message_id,
         parse_mode: 'Markdown'
       }
     ).catch(() => {
-      bot.editMessageText(`❌ Analisa $${ticker} Gagal: ${err.message}`, {
+      bot.editMessageText(`❌ Gagal: ${errorMessage}`, {
         chat_id: msg.chat.id,
         message_id: loading.message_id
       });
@@ -55,13 +65,77 @@ function init(options = { polling: true }) {
       handleDualCek(msg, match[2].toUpperCase());
     });
 
+    bot.onText(/\/news\s+([A-Za-z0-9]+)/i, async (msg, match) => {
+      const ticker = match[1].toUpperCase();
+      
+      // Basic validation for IDX tickers (usually 4 chars, max 6 for warrants)
+      if (ticker.length < 4 || ticker.length > 6) {
+        return bot.sendMessage(msg.chat.id, `⚠️ Ticker *$${ticker}* tidak valid.\n\nKode saham IDX biasanya terdiri dari 4 huruf (contoh: BBCA, ASII).`, { parse_mode: 'Markdown' });
+      }
+
+      const loading = await bot.sendMessage(msg.chat.id, `📰 Mencari berita & Menganalisa Sentimen *$${ticker}*...`, { parse_mode: 'Markdown' });
+      
+      try {
+        const news = await newsService.getLatestNews(ticker);
+        
+        // Panggil Gemini AI untuk analisa sentimen
+        const sentiment = await aiService.analyzeSentiment(ticker, news);
+        
+        const report = formatter.formatNews(ticker, news, sentiment);
+        
+        await bot.editMessageText(report, {
+          chat_id: msg.chat.id,
+          message_id: loading.message_id,
+          parse_mode: 'Markdown',
+          disable_web_page_preview: true
+        });
+      } catch (err) {
+        const safeError = err.message.replace(/[_*`\[\]]/g, '\\$&');
+        bot.editMessageText(
+          `❌ *Gagal Memproses Berita*\n\n` +
+          `Ticker: $${ticker}\n` +
+          `Detail: \`${safeError}\`\n\n` +
+          `💡 _Tips: Pastikan kode saham benar dan koneksi internet stabil._`, 
+          {
+            chat_id: msg.chat.id,
+            message_id: loading.message_id,
+            parse_mode: 'Markdown'
+          }
+        );
+      }
+    });
+
     bot.onText(/\/add\s+([A-Za-z0-9]+)/i, async (msg, match) => {
       const ticker = match[1].toUpperCase();
+      
+      // Basic validation
+      if (ticker.length < 4 || ticker.length > 6) {
+        return bot.sendMessage(msg.chat.id, `⚠️ Ticker *$${ticker}* tidak valid. Kode saham IDX biasanya 4 huruf.`, { parse_mode: 'Markdown' });
+      }
+
+      const status = await bot.sendMessage(msg.chat.id, `🔍 Memverifikasi *$${ticker}* di bursa...`, { parse_mode: 'Markdown' });
+
       try {
+        // Coba analisa singkat untuk verifikasi keberadaan ticker
+        await tvService.analyze(ticker, 1); 
+        
         await dbService.addTicker(ticker);
-        bot.sendMessage(msg.chat.id, `✅ **$${ticker}** berhasil ditambahkan ke radar screener.`, { parse_mode: 'Markdown' });
+        await bot.editMessageText(`✅ **$${ticker}** terverifikasi dan berhasil ditambahkan ke radar screener.`, {
+          chat_id: msg.chat.id,
+          message_id: status.message_id,
+          parse_mode: 'Markdown'
+        });
       } catch (err) {
-        bot.sendMessage(msg.chat.id, `❌ Gagal menambahkan ticker.`);
+        let errorReason = "Emiten tidak ditemukan di IDX.";
+        if (!err.message.includes('Symbol error') && !err.message.includes('ser_1')) {
+          errorReason = "Terjadi gangguan saat verifikasi. Coba lagi nanti.";
+        }
+
+        await bot.editMessageText(`❌ **$${ticker}** gagal ditambahkan.\n\nAlasan: ${errorReason}`, {
+          chat_id: msg.chat.id,
+          message_id: status.message_id,
+          parse_mode: 'Markdown'
+        });
       }
     });
 
@@ -93,12 +167,13 @@ function init(options = { polling: true }) {
     });
 
     bot.onText(/\/help/i, (msg) => {
-      const helpMsg = `🤖 *IDX Signal Bot v3.6*\n` +
-                      `_The Pro Trader Edition_\n\n` +
+      const helpMsg = `🤖 *IDX Signal Bot v3.9*\n` +
+                      `_The AI Sentiment Edition_\n\n` +
                       `Selamat datang! Gunakan perintah berikut untuk mengoperasikan bot:\n\n` +
                       `🔍 *ANALISA & SINYAL*\n` +
                       `• \`/cek [ticker]\` - Analisa teknikal instan (Scalp/Swing).\n` +
-                      `• Contoh: \`/cek BBCA\`\n\n` +
+                      `• \`/news [ticker]\` - Baca 5 berita terbaru emiten.\n` +
+                      `• Contoh: \`/cek BBCA\` atau \`/news GOTO\`\n\n` +
                       `📡 *RADAR & WATCHLIST*\n` +
                       `• \`/add [ticker]\` - Tambahkan saham ke radar pemantauan otomatis.\n` +
                       `• \`/del [ticker]\` - Hapus saham dari radar.\n` +

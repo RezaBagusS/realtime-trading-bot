@@ -9,6 +9,9 @@ module.exports = {
     session: process.env.TRADINGVIEW_SESSION,
     signature: process.env.TRADINGVIEW_SIGNATURE
   },
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY
+  },
   thresholds: {
     scalp: {
       name: 'SCALPING (Short-Term)',
