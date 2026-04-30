@@ -1,27 +1,28 @@
-# 🚀 IDX Smart Trading Bot v3.8 (The News-Aware Edition)
+# 🚀 IDX Smart Trading Bot v3.9.5 (The Robust AI Edition)
 
-Bot sinyal trading otomatis untuk saham IDX (Indonesia Stock Exchange) yang menggabungkan analisa teknikal pro, manajemen resiko adaptif, kesadaran kondisi pasar global (IHSG), dan agregasi berita real-time.
+Bot sinyal trading otomatis untuk saham IDX (Indonesia Stock Exchange) yang menggabungkan analisa teknikal pro, kecerdasan buatan (Gemini AI), manajemen resiko adaptif, kesadaran kondisi pasar global (IHSG), dan agregasi berita real-time.
 
 ## ✨ Fitur Utama
+- **🤖 AI Sentiment Analysis (v3.9.5):** Integrasi **Gemini 2.5 Flash** untuk menganalisis sentimen berita secara otomatis (-1 s/d 1) dan memberikan ringkasan eksekutif.
+- **🛡️ Robust Input Validation:** Verifikasi emiten secara real-time ke bursa sebelum ditambahkan ke watchlist untuk mencegah data sampah.
 - **Intelligence News Layer (v3.8):** Bot mengumpulkan berita terbaru dari sumber kredibel (CNBC, Kontan, Investing, Bisnis.com) via Google News Aggregator.
 - **IHSG Global Filter (v3.6):** Bot memantau indeks IHSG sebagai *Safety Switch*. Skor saham otomatis dipotong jika kondisi bursa sedang *Bearish*.
 - **Dual-Strategy Detection:** Deteksi otomatis strategi **Scalping (1H)** atau **Swing Trading (Daily)**.
 - **Balanced Scoring System:** Penilaian teknikal (0-100) berbasis Tren, Momentum, Struktur, dan **Market Context**.
 - **Adaptive Exits (ATR-Based):** Manajemen resiko otomatis mengikuti volatilitas pasar.
-- **Advanced Backtester v1.15:** Simulasi detail dengan log transaksi riil dan integrasi filter IHSG.
 
 ---
 
 ## 🤖 Panduan Perintah Telegram
 Gunakan perintah berikut langsung di bot Telegram Anda:
 
-### 🔍 Analisa & Berita (Live)
-- `/cek [TICKER]` - Menjalankan **Logic Engine v3.8** secara instan. Memberikan skor teknikal, status IHSG, area entry, dan target profit/stop-loss.
-- `/news [TICKER]` - Menampilkan 5 berita terbaru emiten untuk analisa fundamental kilat.
+### 🔍 Analisa & AI Sentiment (Live)
+- `/cek [TICKER]` - Menjalankan **Logic Engine v3.9.5** secara instan. Memberikan skor teknikal, status IHSG, area entry, dan target profit/stop-loss.
+- `/news [TICKER]` - Menampilkan berita terbaru + **Analisa Sentimen AI** menggunakan model Gemini terbaru.
 - `/help` - Panduan lengkap.
 
 ### 📡 Radar & Watchlist (Automated)
-- `/add [TICKER]` - Memasukkan saham ke radar. Bot akan memindai otomatis setiap jam.
+- `/add [TICKER]` - Memasukkan saham ke radar (Melalui proses verifikasi bursa otomatis).
 - `/del [TICKER]` - Menghapus dari radar.
 - `/list` - Cek isi radar.
 
@@ -35,7 +36,7 @@ Gunakan perintah berikut langsung di bot Telegram Anda:
 
 ## 💡 Panduan Eksekusi (Tactical Advice)
 1. **Waktu Emas Analisa:** Lakukan `/cek` manual pada jam **09:05** dan **14:50**.
-2. **Cek Berita Sebelum Entry:** Gunakan `/news` untuk memastikan tidak ada sentimen negatif mendadak.
+2. **Cek Sentimen AI:** Gunakan `/news` untuk melihat skor sentimen (-100% s/d 100%) sebelum mengambil keputusan entry.
 3. **Disiplin Exit:** Selalu gunakan angka **Stop Loss** yang diberikan bot.
 
 ---
