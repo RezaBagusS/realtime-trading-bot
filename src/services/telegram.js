@@ -61,8 +61,50 @@ function init(options = { polling: true }) {
 
   // Hanya pasang listener jika polling aktif
   if (options.polling) {
-    bot.onText(/\/(cek|scalp|swing)\s+([A-Za-z0-9]+)/i, (msg, match) => {
-      handleDualCek(msg, match[2].toUpperCase());
+    bot.onText(/\/technical\s+([A-Za-z0-9]+)/i, (msg, match) => {
+      handleDualCek(msg, match[1].toUpperCase());
+    });
+
+    bot.onText(/\/analysis\s+([A-Za-z0-9]+)/i, async (msg, match) => {
+      const ticker = match[1].toUpperCase();
+      
+      // Basic validation for IDX tickers (usually 4 chars, max 6 for warrants)
+      if (ticker.length < 4 || ticker.length > 6) {
+        return bot.sendMessage(msg.chat.id, `⚠️ Ticker *$${ticker}* tidak valid. Kode saham IDX biasanya 4 huruf.`, { parse_mode: 'Markdown' });
+      }
+
+      const loading = await bot.sendMessage(msg.chat.id, `🧬 **Hybrid Engine v4.0** sedang memproses *$${ticker}*...\n\n_Menganalisa data teknikal & sentimen AI..._`, { parse_mode: 'Markdown' });
+      
+      try {
+        const [technicalData, news, marketStatus] = await Promise.all([
+          tvService.analyze(ticker, config.thresholds.swing),
+          newsService.getLatestNews(ticker),
+          tvService.getMarketStatus()
+        ]);
+
+        // Panggil Gemini AI untuk analisa sentimen
+        const sentiment = await aiService.analyzeSentiment(ticker, news);
+        
+        const report = formatter.formatHybridAnalysis(ticker, technicalData, sentiment, marketStatus);
+        
+        await bot.editMessageText(report, {
+          chat_id: msg.chat.id,
+          message_id: loading.message_id,
+          parse_mode: 'Markdown',
+          disable_web_page_preview: true
+        });
+      } catch (err) {
+        let errorMsg = `❌ *Gagal Memproses Analysis*\n\nDetail: \`${err.message.replace(/[_*`\[\]]/g, '\\$&')}\``;
+        if (err.message.includes('Symbol error') || err.message.includes('ser_1')) {
+          errorMsg = `❌ Emitten *$${ticker}* tidak ditemukan di IDX.`;
+        }
+        
+        bot.editMessageText(errorMsg, {
+          chat_id: msg.chat.id,
+          message_id: loading.message_id,
+          parse_mode: 'Markdown'
+        });
+      }
     });
 
     bot.onText(/\/news\s+([A-Za-z0-9]+)/i, async (msg, match) => {
@@ -167,19 +209,19 @@ function init(options = { polling: true }) {
     });
 
     bot.onText(/\/help/i, (msg) => {
-      const helpMsg = `🤖 *IDX Signal Bot v3.9*\n` +
-                      `_The AI Sentiment Edition_\n\n` +
+      const helpMsg = `🤖 *IDX Signal Bot v4.0*\n` +
+                      `_The Hybrid Engine Edition_\n\n` +
                       `Selamat datang! Gunakan perintah berikut untuk mengoperasikan bot:\n\n` +
-                      `🔍 *ANALISA & SINYAL*\n` +
-                      `• \`/cek [ticker]\` - Analisa teknikal instan (Scalp/Swing).\n` +
-                      `• \`/news [ticker]\` - Baca 5 berita terbaru emiten.\n` +
-                      `• Contoh: \`/cek BBCA\` atau \`/news GOTO\`\n\n` +
+                      `💎 *INTELLIGENCE ANALYST*\n` +
+                      `• \`/analysis [ticker]\` - **Analisa Hybrid (Teknikal + AI).** Rekomendasi paling akurat.\n` +
+                      `• \`/technical [ticker]\` - Analisa teknikal murni (Scalp & Swing).\n` +
+                      `• \`/news [ticker]\` - Baca 5 berita terbaru emiten & Sentimen AI.\n\n` +
                       `📡 *RADAR & WATCHLIST*\n` +
                       `• \`/add [ticker]\` - Tambahkan saham ke radar pemantauan otomatis.\n` +
                       `• \`/del [ticker]\` - Hapus saham dari radar.\n` +
                       `• \`/list\` - Tampilkan semua saham di radar.\n\n` +
                       `💡 *TIPS*\n` +
-                      `Bot akan otomatis memindai watchlist Anda setiap jam dan memberikan sinyal jika ditemukan momentum yang tepat.\n\n` +
+                      `Gunakan \`/analysis\` untuk mendapatkan keyakinan penuh sebelum melakukan entry saham.\n\n` +
                       `_Developed with ❤️ for Indonesian Traders_`;
       bot.sendMessage(msg.chat.id, helpMsg, { parse_mode: 'Markdown' });
     });

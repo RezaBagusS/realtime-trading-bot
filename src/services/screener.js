@@ -4,6 +4,8 @@ const tvService = require('./tradingview');
 const dbService = require('./database');
 const formatter = require('../utils/formatter');
 const logger = require('../utils/logger');
+const newsService = require('./news');
+const aiService = require('./ai');
 
 function isMarketOpen() {
   const now = new Date();
@@ -35,23 +37,37 @@ async function runScreener(bot) {
 
   for (const ticker of watchList) {
     try {
-      // Analisa Paralel
-      const [scalpData, swingData] = await Promise.all([
-        tvService.analyze(ticker, config.thresholds.scalp).catch(() => null),
-        tvService.analyze(ticker, config.thresholds.swing).catch(() => null)
-      ]);
-      
-      if (!scalpData || !swingData) continue;
+      // 1. Ambil Data Teknikal Terlebih Dahulu (Filter Utama)
+      const technicalData = await tvService.analyze(ticker, config.thresholds.swing);
+      const tScore = formatter.calculateScore(technicalData, marketStatus).total;
 
-      const report = formatter.formatDualAnalysis(ticker, scalpData, swingData, marketStatus);
-      
-      // Kirim alert hanya jika ada sinyal BUY/STRONG BUY
-      if (report.includes('💎') || report.includes('✅')) {
-        await bot.sendMessage(config.telegram.channelId, `📢 **AUTO-ALERT RADAR**\n\n${report}`, { parse_mode: 'Markdown' });
-        logger.success(`Sinyal ditemukan untuk ${ticker}, alert dikirim.`);
+      // OPTIMASI: Hanya panggil AI jika Technical Score >= 60
+      // Ini menghemat kuota API Gemini & mempercepat proses
+      if (tScore < 60) {
+        logger.info(`Screener: $${ticker} diskip (Technical Score ${tScore} < 60).`);
+        continue; 
       }
 
-      await new Promise(r => setTimeout(r, 2000));
+      logger.info(`Screener: $${ticker} potensial (Score ${tScore}), memanggil AI Sentiment...`);
+      
+      // 2. Ambil Berita & Analisa AI hanya untuk yang lolos filter
+      const news = await newsService.getLatestNews(ticker);
+      const sentiment = await aiService.analyzeSentiment(ticker, news);
+
+      // 3. Generate Hybrid Report
+      const report = formatter.formatHybridAnalysis(ticker, technicalData, sentiment, marketStatus);
+      
+      // Kirim alert jika skor Hybrid >= 70
+      if (report.includes('✅') || report.includes('💎')) {
+        await bot.sendMessage(config.telegram.channelId, `📢 **AUTO-SIGNAL: HYBRID RADAR**\n\n${report}`, { 
+          parse_mode: 'Markdown',
+          disable_web_page_preview: true 
+        });
+        logger.success(`Hybrid Signal ditemukan untuk ${ticker}, alert dikirim.`);
+      }
+
+      // Jeda 3 detik saja (sudah cukup karena filter teknikal sudah mengurangi jumlah panggilan)
+      await new Promise(r => setTimeout(r, 3000));
     } catch (err) {
       logger.error(`Screener gagal untuk ${ticker}:`, err.message);
     }

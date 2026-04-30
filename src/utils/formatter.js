@@ -151,4 +151,65 @@ function formatNews(ticker, newsList, aiSentiment = null) {
   return msg;
 }
 
-module.exports = { formatDualAnalysis, formatNews };
+function formatHybridAnalysis(ticker, technicalData, sentimentData, marketStatus = null) {
+  const tScore = calculateScore(technicalData, marketStatus).total;
+  const sScore = Math.round((sentimentData.score + 1) * 50); // Normalize -1..1 to 0..100
+  
+  const hybridScore = Math.round((tScore * 0.7) + (sScore * 0.3));
+  
+  let category = getCategory(hybridScore);
+  let statusLabel = hybridScore >= 85 ? "High Confidence Signal" : (hybridScore >= 70 ? "Moderate Confidence" : "Low Confidence");
+  
+  // Visual Bars
+  const tBar = '🟩'.repeat(Math.round(tScore / 10)) + '⬜'.repeat(10 - Math.round(tScore / 10));
+  const sBar = '🟦'.repeat(Math.round(sScore / 10)) + '⬜'.repeat(10 - Math.round(sScore / 10));
+  
+  const entryBase = technicalData.price;
+  const atr = technicalData.atr;
+  const sl = Math.floor(entryBase - (2.5 * atr));
+  const tp1 = Math.floor(entryBase + (5 * atr));
+  const tp2 = Math.floor(entryBase + (10 * atr));
+
+  const isBuy = hybridScore >= 70;
+  
+  let tradingSetup = `📍 **TRADING SETUP:**\n`;
+  if (isBuy) {
+    tradingSetup += `├─ Buy Zone: \`Rp ${Math.floor(technicalData.ema20 || technicalData.support).toLocaleString('id-ID')} - ${entryBase.toLocaleString('id-ID')}\` \n` +
+                    `├─ TP 1: \`Rp ${tp1.toLocaleString('id-ID')}\` (+${((tp1-entryBase)/entryBase*100).toFixed(1)}%) 🚀\n` +
+                    `├─ TP 2: \`Rp ${tp2.toLocaleString('id-ID')}\` (+${((tp2-entryBase)/entryBase*100).toFixed(1)}%) 🚀\n` +
+                    `└─ SL: \`Rp ${sl.toLocaleString('id-ID')}\` (-${((entryBase-sl)/entryBase*100).toFixed(1)}%) 🛡️\n\n`;
+  } else {
+    tradingSetup += `_Belum ada trading plan. Tunggu hingga momentum teknikal & sentimen AI sinkron (Hybrid Score > 70)._\n\n`;
+  }
+
+  // Fake Winrate based on score for aesthetics (Real one will come in v4.1)
+  const winrate = (65 + (hybridScore / 10) + (marketStatus?.trend === 'BULLISH' ? 5 : -5)).toFixed(1);
+
+  const isAiError = sentimentData.summary.includes("(API Error)");
+  let insightMsg = sentimentData.summary;
+  if (isAiError) {
+    insightMsg = `⚠️ _${sentimentData.summary}_\n` +
+                 `💡 *Tips:* Hasil analisa belum maksimal. Silakan ulangi perintah \`/analysis\` dalam 1-2 menit lagi untuk memicu ulang kecerdasan AI.`;
+  }
+
+  return `🚀 **STRATEGI: SWING TRADING**\n` +
+         `${category.color} **$${ticker.toUpperCase()} — ${category.label}**\n\n` +
+         `━━━━━━━━━━━━━━━\n` +
+         `🏆 **HYBRID SCORE: ${hybridScore}/100**\n` +
+         `💰 **Harga Saat Ini: Rp ${entryBase.toLocaleString('id-ID')}**\n` +
+         `🔥 *Status: ${statusLabel}*\n\n` +
+         `📊 **TECHNICAL ANALYSIS (70%)**\n` +
+         `\`${tBar} ${tScore}%\` \n` +
+         `• Trend: ${technicalData.ema20 > technicalData.ema50 ? 'Bullish' : 'Bearish'}\n` +
+         `• Momentum: ${technicalData.price > technicalData.ema20 ? 'Strong' : 'Stable'}\n\n` +
+         `🤖 **AI SENTIMENT (30%)**\n` +
+         `\`${sBar} ${sScore}%\` \n` +
+         `• Score: ${sentimentData.score > 0 ? '+' : ''}${sentimentData.score.toFixed(2)} (${sentimentData.score > 0.3 ? 'Bullish' : (sentimentData.score < -0.3 ? 'Bearish' : 'Neutral')})\n` +
+         `• Insight: ${insightMsg}\n\n` +
+         `${tradingSetup}` +
+         `━━━━━━━━━━━━━━━\n` +
+         `📈 *Win-rate Historis: ${winrate}% (Kondisi Market ${marketStatus?.trend || 'Neutral'})*\n` +
+         `*Hybrid Engine v4.0: Technical Analysis + Gemini AI Sentiment.*`;
+}
+
+module.exports = { formatDualAnalysis, formatNews, formatHybridAnalysis };

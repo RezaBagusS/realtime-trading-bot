@@ -25,7 +25,7 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [x] **News Scraper Service (v3.8):** Aggregator berita via Google News RSS (CNBC, Kontan, Investing, Bisnis.com). (COMPLETED)
 - [x] **Gemini AI Sentiment Analysis (v3.9):** Ekstraksi sentimen (-1 s/d 1) menggunakan model Gemini 2.5 Flash. (COMPLETED)
 - [x] **Input Validation & Robust Error Handling (v3.9.5):** Verifikasi ticker real-time dan penanganan error yang user-friendly. (COMPLETED)
-- [ ] **Hybrid Decision Engine:** Gabungan skor teknikal (70%) dan skor sentimen (30%).
+- [x] **Hybrid Decision Engine (v4.0):** Gabungan skor teknikal (70%) dan skor sentimen (30%). (COMPLETED)
 
 ### 3. Professional Metrics
 - [ ] **Portfolio Drawdown Analysis:** Menghitung resiko penurunan modal secara historis.
@@ -39,4 +39,4 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [ ] **Web Dashboard Analytics.**
 
 ---
-*Dokumentasi telah disinkronkan dengan Source Code v3.9.5 - 01 Mei 2026*
+*Dokumentasi telah disinkronkan dengan Source Code v4.0 - 01 Mei 2026*

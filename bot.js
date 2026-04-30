@@ -8,7 +8,7 @@ const dbService = require('./src/services/database');
 const logger = require('./src/utils/logger');
 
 function bootstrap() {
-  logger.info('Starting IDX Signal Bot v3.9.5 (The Robust AI Edition)...');
+  logger.info('Starting IDX Signal Bot v4.0 (The Hybrid Engine Edition)...');
   
   try {
     // 1. Inisialisasi Database
