@@ -6,27 +6,26 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 
 ## ✅ FASE 1: The Pro Trader (STATUS: COMPLETED)
 **Tujuan:** Membangun mesin analisa teknikal yang akurat dan sistem manajemen resiko otomatis.
-
-- [x] **Modular Architecture (v2.0):** Pemisahan yang bersih antara Services (TV, DB, Telegram) dan Utils (Indicators, Formatter).
-- [x] **Balanced Scoring (v3.5):** Algoritma penilaian teknikal 0-100 menggunakan perpaduan EMA, MACD, dan Price Action.
-- [x] **Dual Timeframe Strategy:** Sistem cerdas yang bisa membedakan rekomendasi **Scalping (1H)** dan **Swing (Daily)**.
-- [x] **Long-Only Logic (v3.5):** Optimasi untuk pasar spot dengan filter sinyal "Wait & See" dan "Avoid".
-- [x] **Adaptive ATR Exits (v3.5):** Manajemen resiko otomatis dengan pengali ATR yang berbeda untuk setiap strategi.
-- [x] **Advanced Backtester (v1.12):** Simulasi dengan log detail, kalkulasi saldo, dan force-close floating trades.
+- [x] **Modular Architecture (v2.0)**
+- [x] **Balanced Scoring (v3.5)**
+- [x] **Dual Timeframe Strategy**
+- [x] **Long-Only Logic (v3.5)**
+- [x] **Adaptive ATR Exits (v3.5)**
+- [x] **Advanced Backtester (v1.12)**
 
 ---
 
-## 🔵 FASE 2: The AI Quant Analyst (STATUS: NEXT STEP)
-**Tujuan:** Mengintegrasikan AI untuk membaca sentimen pasar dan berita fundamental.
+## 🔵 FASE 2: The AI Quant Analyst (STATUS: IN PROGRESS)
+**Tujuan:** Menggabungkan analisa Teknikal dengan Sentimen Berita & AI.
 
-### 1. Intelligence Layer
-- [ ] **News Scraper Service:** Integrasi scraper untuk CNBC Indonesia, Kontan, dan Bisnis.com.
-- [ ] **Gemini AI Sentiment Analysis:** Mengklasifikasikan berita menjadi skor sentimen positif/negatif.
-- [ ] **Hybrid Decision Engine:** Gabungan skor teknikal (70%) dan skor sentimen (30%).
-
-### 2. Market Risk Context
-- [ ] **IHSG Global Filter:** Sistem "Safety Switch" jika kondisi bursa sedang crash.
+### 1. Market Risk Context
+- [x] **IHSG Global Filter (v3.6):** Sistem "Safety Switch" jika kondisi bursa sedang crash. (COMPLETED)
 - [ ] **Sectoral Pulse:** Deteksi pergerakan modal antar sektor saham.
+
+### 2. Intelligence Layer
+- [ ] **News Scraper Service:** Integrasi scraper untuk CNBC Indonesia, Kontan, dan Bisnis.com.
+- [ ] **Gemini AI Sentiment Analysis:** Ekstraksi sentimen (-1 s/d 1) dari berita saham.
+- [ ] **Hybrid Decision Engine:** Gabungan skor teknikal (70%) dan skor sentimen (30%).
 
 ### 3. Professional Metrics
 - [ ] **Portfolio Drawdown Analysis:** Menghitung resiko penurunan modal secara historis.
@@ -40,4 +39,4 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [ ] **Web Dashboard Analytics.**
 
 ---
-*Dokumentasi ini telah disinkronkan dengan Source Code v3.5 - 29 April 2026*
+*Dokumentasi telah disinkronkan dengan Source Code v3.6 - 30 April 2026*

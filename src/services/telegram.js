@@ -11,12 +11,13 @@ async function handleDualCek(msg, ticker) {
   const loading = await bot.sendMessage(msg.chat.id, `🔍 Menganalisa *$${ticker}* (1H & Daily)...`, { parse_mode: 'Markdown' });
 
   try {
-    const [scalpData, swingData] = await Promise.all([
+    const [scalpData, swingData, marketStatus] = await Promise.all([
       tvService.analyze(ticker, config.thresholds.scalp),
-      tvService.analyze(ticker, config.thresholds.swing)
+      tvService.analyze(ticker, config.thresholds.swing),
+      tvService.getMarketStatus()
     ]);
 
-    const report = formatter.formatDualAnalysis(ticker, scalpData, swingData);
+    const report = formatter.formatDualAnalysis(ticker, scalpData, swingData, marketStatus);
 
     await bot.editMessageText(report, {
       chat_id: msg.chat.id,
@@ -92,7 +93,7 @@ function init(options = { polling: true }) {
     });
 
     bot.onText(/\/help/i, (msg) => {
-      const helpMsg = `🤖 *IDX Signal Bot v3.5*\n` +
+      const helpMsg = `🤖 *IDX Signal Bot v3.6*\n` +
                       `_The Pro Trader Edition_\n\n` +
                       `Selamat datang! Gunakan perintah berikut untuk mengoperasikan bot:\n\n` +
                       `🔍 *ANALISA & SINYAL*\n` +

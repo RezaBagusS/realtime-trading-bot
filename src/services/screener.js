@@ -31,6 +31,7 @@ async function runScreener(bot) {
   }
 
   logger.info(`Memulai Auto-Screener: ${watchList.length} saham dipantau...`);
+  const marketStatus = await tvService.getMarketStatus();
 
   for (const ticker of watchList) {
     try {
@@ -42,7 +43,7 @@ async function runScreener(bot) {
       
       if (!scalpData || !swingData) continue;
 
-      const report = formatter.formatDualAnalysis(ticker, scalpData, swingData);
+      const report = formatter.formatDualAnalysis(ticker, scalpData, swingData, marketStatus);
       
       // Kirim alert hanya jika ada sinyal BUY/STRONG BUY
       if (report.includes('💎') || report.includes('✅')) {

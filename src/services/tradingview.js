@@ -30,9 +30,31 @@ function calculateEMA(data, period) {
   return ema;
 }
 
+async function getMarketStatus() {
+  try {
+    const history = await getHistory('COMPOSITE', 'D', 50);
+    const last = history[history.length - 1];
+    const prev = history[history.length - 2];
+    
+    const ema20 = calculateEMA(history, 20);
+    const isBullish = last.close > ema20;
+    const dailyChange = ((last.close - prev.close) / prev.close * 100).toFixed(2);
+
+    return {
+      price: last.close,
+      change: dailyChange,
+      trend: isBullish ? 'BULLISH' : 'BEARISH',
+      ema20: ema20
+    };
+  } catch (err) {
+    logger.error('Gagal mengambil status IHSG:', err.message);
+    return { trend: 'NEUTRAL', change: 0, price: 0 };
+  }
+}
+
 async function analyze(ticker, strategy) {
   return new Promise(async (resolve, reject) => {
-    const symbol = `IDX:${ticker.toUpperCase()}`;
+    const symbol = ticker.toUpperCase() === 'COMPOSITE' ? 'IDX:COMPOSITE' : `IDX:${ticker.toUpperCase()}`;
     const timeout = setTimeout(() => {
       if (chart) chart.delete();
       reject(new Error(`Timeout: Koneksi sedang sibuk. Coba 5 detik lagi.`));
@@ -96,10 +118,16 @@ async function analyze(ticker, strategy) {
 
 async function getHistory(ticker, timeframe = 'D', range = 350) {
   return new Promise(async (resolve, reject) => {
-    const symbol = `IDX:${ticker.toUpperCase()}`;
+    const symbol = ticker.toUpperCase() === 'COMPOSITE' ? 'IDX:COMPOSITE' : `IDX:${ticker.toUpperCase()}`;
     const tvClient = getClient();
     const chart = new tvClient.Session.Chart();
     
+    // Tambahkan OnError agar tidak stuck saat simbol salah
+    chart.onError((err) => {
+      chart.delete();
+      reject(new Error(`TradingView Error: ${err}`));
+    });
+
     chart.setMarket(symbol, { timeframe, range });
     
     chart.onUpdate(() => {
@@ -112,9 +140,9 @@ async function getHistory(ticker, timeframe = 'D', range = 350) {
 
     setTimeout(() => {
       chart.delete();
-      reject(new Error('Timeout mengambil history'));
-    }, 20000);
+      reject(new Error(`Timeout: Data $${ticker} tidak merespon. Pastikan ticker benar.`));
+    }, 25000); // Naikkan ke 25 detik
   });
 }
 
-module.exports = { analyze, getHistory };
+module.exports = { analyze, getHistory, getMarketStatus };

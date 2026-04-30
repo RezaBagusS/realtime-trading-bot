@@ -1,49 +1,60 @@
 const config = require('../config');
 const indicators = require('./indicators');
 
-function calculateScore(data) {
+function calculateScore(data, marketStatus = null) {
   let score = 50; 
   let reasons = [];
 
-  // 1. TREND
+  // 1. MARKET CONTEXT (Safety Switch)
+  if (marketStatus) {
+    if (marketStatus.trend === 'BEARISH') {
+      score -= 20;
+      reasons.push('⚠️ Market (IHSG) Bearish');
+    } else if (marketStatus.trend === 'BULLISH') {
+      score += 5;
+      reasons.push('🌐 Market (IHSG) Bullish');
+    }
+  }
+
+  // 2. TREND
   if (data.ema20 > data.ema50) {
     score += 20;
     if (data.price > data.ema20) score += 5;
-    reasons.push('Tren Bullish (EMA20 > EMA50)');
+    reasons.push('Tren Saham Bullish');
   } else {
     score -= 30;
-    reasons.push('Tren Bearish');
+    reasons.push('Tren Saham Bearish');
   }
 
-  // 2. MOMENTUM MACD
+  // 3. MOMENTUM MACD
   const macd = indicators.calculateMACD(data.rawHistory);
   if (macd.hist > 0) {
     score += 15;
     reasons.push('Momentum MACD Positif');
   }
 
-  // 3. STRUCTURE
+  // 4. STRUCTURE
   if (data.price >= data.resistance) {
     score += 15;
     reasons.push('Breakout Resistance Lokal');
   } else if (Math.abs(data.price - data.ema20) / data.ema20 < 0.02) {
     score += 10;
-    reasons.push('Area Pullback (Dekat EMA20)');
+    reasons.push('Area Pullback (EMA20)');
   }
 
-  return { total: Math.min(Math.max(score, 0), 100), reasons: reasons.slice(0, 3) };
+  return { total: Math.min(Math.max(score, 0), 100), reasons: reasons.slice(0, 4) };
 }
 
 function getCategory(score) {
   if (score >= 85) return { label: '💎 STRONG BUY', color: '🟩' };
   if (score >= 70) return { label: '✅ BUY', color: '🍀' };
   if (score >= 40) return { label: '⚖️ WAIT & SEE', color: '🟡' };
-  return { label: '🚨 AVOID', color: '🟥' }; // Mengganti SELL menjadi AVOID
+  return { label: '🚨 AVOID', color: '🟥' };
 }
 
-function formatDualAnalysis(ticker, scalpData, swingData) {
-  const scalpScore = calculateScore(scalpData);
-  const swingScore = calculateScore(swingData);
+function formatDualAnalysis(ticker, scalpData, swingData, marketStatus = null) {
+  const scalpScore = calculateScore(scalpData, marketStatus);
+  const swingScore = calculateScore(swingData, marketStatus);
 
   let isSwing = swingScore.total >= scalpScore.total;
   let bestData = isSwing ? swingData : scalpData;
@@ -56,11 +67,20 @@ function formatDualAnalysis(ticker, scalpData, swingData) {
   const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
   const scoreBar = '💊'.repeat(Math.round(bestScore.total / 10)) + '⚪'.repeat(10 - Math.round(bestScore.total / 10));
 
+  let marketEmoji = '⚪';
+  if (marketStatus) {
+    marketEmoji = marketStatus.trend === 'BULLISH' ? '📈' : '📉';
+  }
+
   let msg = `${category.color} *${category.label} — $${ticker.toUpperCase()}*\n` +
             `🎯 *REKOMENDASI: ${recommendation}*\n\n` +
             `💰 *Harga Saat Ini:* Rp ${bestData.price.toLocaleString('id-ID')}\n` +
             `📊 *Technical Score:* \`${bestScore.total}/100\`\n` +
             `\`[${scoreBar}]\`\n\n`;
+
+  if (marketStatus) {
+    msg += `${marketEmoji} *Market Context:* IHSG ${marketStatus.trend} (${marketStatus.change}%)\n\n`;
+  }
 
   if (isBuy) {
     const entryBase = bestData.price;
