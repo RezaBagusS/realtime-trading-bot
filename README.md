@@ -47,3 +47,39 @@ Gunakan perintah berikut langsung di bot Telegram Anda:
 
 ---
 *Disclaimer: Investasi saham memiliki resiko. Gunakan bot ini sebagai alat bantu analisa, bukan satu-satunya dasar pengambilan keputusan.*
+## 🚀 Cara Menjalankan & Mengelola Bot
+
+Pastikan Anda sudah mengonfigurasi file .env dengan benar sebelum memulai.
+
+### 1. Instalasi
+```bash
+npm install
+```
+
+### 2. Menjalankan di Production (Background Mode)
+Gunakan perintah ini agar bot tetap menyala meskipun terminal ditutup:
+```bash
+npm start
+```
+
+### 3. Pemantauan & Log
+Untuk melihat aktivitas bot secara real-time:
+```bash
+npm run logs
+```
+Untuk melihat status kesehatan bot:
+```bash
+npm run status
+```
+
+### 4. Pemeliharaan
+*   **Restart Bot** (Gunakan setelah mengubah .env): `npm run restart`
+*   **Matikan Bot**: `npm stop`
+
+## 🛠️ Tech Stack
+*   **Engine**: Node.js v20+ (ESM)
+*   **Process Manager**: PM2 (Cluster/Fork Mode)
+*   **Database**: SQLite (Local) / Ready for Supabase (Cloud)
+*   **AI**: Google Gemini 1.5/2.5 Flash
+*   **Indicators**: Custom Built (MACD, RSI, ATR, Support/Resistance)
+

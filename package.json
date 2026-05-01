@@ -4,9 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon bot.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node bot.js",
+    "start": "npx pm2 start ecosystem.config.cjs",
+    "stop": "npx pm2 stop zenith-ai-bot",
+    "restart": "npx pm2 restart zenith-ai-bot",
+    "logs": "npx pm2 logs zenith-ai-bot",
+    "status": "npx pm2 status",
+    "test": "node scratch/test-scenarios.js"
   },
   "keywords": [],
   "author": "",

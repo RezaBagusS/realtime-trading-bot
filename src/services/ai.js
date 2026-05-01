@@ -161,6 +161,21 @@ async function analyzeSentiment(ticker, newsItems) {
     if (isQuotaExceeded && config.gemini.provider === 'gemini') {
       logger.warn(`Gemini Key #${currentKeyIndex} mencapai limit. Rotasi...`);
       depletedKeys.add(currentKeyIndex);
+      
+      // Jika semua key habis, simpan status LIMITED ke cache selama 15 menit
+      // agar tidak terus-menerus mencoba memanggil API yang sedang memblokir.
+      if (depletedKeys.size >= models.length) {
+        const negativeCache = { 
+          score: 0, 
+          summary: "Kuota AI Habis (Sistem Menunggu 15 Menit)", 
+          sentiment_label: "LIMITED",
+          confidence: 0
+        };
+        dbService.setAiCache(ticker, negativeCache, 15);
+        cache.set(cacheKey, negativeCache, 15);
+        return negativeCache;
+      }
+
       return analyzeSentiment(ticker, newsItems);
     }
 

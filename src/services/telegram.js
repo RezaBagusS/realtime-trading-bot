@@ -91,17 +91,25 @@ function init(options = { polling: true }) {
       const loading = await bot.sendMessage(msg.chat.id, `🧬 **Zenith AI Hybrid Engine** sedang memproses *$${ticker}*...\n\n_Menganalisa data teknikal & sentimen AI..._`, { parse_mode: 'Markdown' });
       
       try {
-        const [technicalData, news, marketStatus, userSettings] = await Promise.all([
+        const [technicalResults, marketStatus, userSettings] = await Promise.all([
           tvService.analyze(ticker, config.thresholds.swing),
-          newsService.getLatestNews(ticker),
           tvService.getMarketStatus(),
           dbService.getUserSettings(msg.chat.id)
         ]);
 
-        // Panggil Gemini AI untuk analisa sentimen
-        const sentiment = await aiService.analyzeSentiment(ticker, news);
+        const tScore = formatter.calculateScore(technicalResults, marketStatus).total;
         
-        const { report, hybridScore } = await formatter.formatHybridAnalysis(ticker, technicalData, sentiment, marketStatus, userSettings);
+        let sentiment = { score: 0, summary: "Analisa AI dilewati karena tren teknikal sangat lemah.", sentiment_label: "NEUTRAL" };
+        
+        // Hanya panggil AI jika Technical Score > 30 (Menghemat Kuota Pro)
+        if (tScore > 30) {
+          const news = await newsService.getLatestNews(ticker);
+          sentiment = await aiService.analyzeSentiment(ticker, news);
+        } else {
+          logger.info(`Skipping AI for ${ticker} due to low technical score (${tScore})`);
+        }
+        
+        const { report, hybridScore } = await formatter.formatHybridAnalysis(ticker, technicalResults, sentiment, marketStatus, userSettings);
 
         // 1. Simpan Sinyal ke History jika Skor >= 70
         if (hybridScore >= 70) {
