@@ -4,15 +4,23 @@ import logger from '../utils/logger.js';
 import * as indicators from '../utils/indicators.js';
 
 let client = null;
+let lastErrorTime = 0;
+const RECONNECT_COOLDOWN = 15000; // 15 detik jeda antar koneksi ulang
 
 function getClient() {
   if (!client) {
+    const now = Date.now();
+    if (now - lastErrorTime < RECONNECT_COOLDOWN) {
+      throw new Error(`Sistem sedang memulihkan koneksi ke TradingView. Mohon tunggu ${Math.ceil((RECONNECT_COOLDOWN - (now - lastErrorTime))/1000)} detik.`);
+    }
+
     client = new TradingView.Client({
       token: config.tradingview.session,
       signature: config.tradingview.signature
     });
     client.onError((err) => {
       logger.error('TradingView Client Error:', err);
+      lastErrorTime = Date.now();
       client = null;
     });
   }

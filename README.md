@@ -12,6 +12,8 @@ Zenith AI Trading Engine adalah bot sinyal trading canggih yang menggabungkan ke
 *   💾 **Persistent AI Cache**: Menghemat kuota API dengan menyimpan hasil analisa sentimen di database SQLite.
 *   📅 **Market Awareness**: Mendeteksi kalender libur bursa IDX secara otomatis.
 *   🔄 **API Key Rotation**: Mendukung penggunaan multiple API Keys untuk bypass limit free tier.
+*   📱 **Professional Telegram UX**: Menu perintah interaktif, validasi input otomatis, dan sistem bantuan (catch-all) yang cerdas.
+*   🌐 **Resilient Connectivity**: Sistem auto-recovery dan reconnection cooldown untuk menjaga bot tetap online di jaringan tidak stabil.
 - **IHSG Global Filter (v3.6):** Bot memantau indeks IHSG sebagai *Safety Switch*. Skor saham otomatis dipotong jika kondisi bursa sedang *Bearish*.
 - **Dual-Strategy Detection:** Deteksi otomatis strategi **Scalping (1H)** atau **Swing Trading (Daily)**.
 

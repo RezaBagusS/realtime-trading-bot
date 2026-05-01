@@ -57,20 +57,35 @@ async function handleDualCek(msg, ticker) {
 function init(options = { polling: true }) {
   if (!bot) {
     bot = new TelegramBot(config.telegram.token, options);
+    
+    // Konfigurasi Command Menu (Sesuai Permintaan User)
+    bot.setMyCommands([
+      { command: 'analysis', description: 'Analisa Hybrid (Teknikal + AI Sentiment)' },
+      { command: 'technical', description: 'Analisa Teknikal Murni (Scalp & Swing)' },
+      { command: 'news', description: 'Berita Terbaru & Sentimen AI' },
+      { command: 'list', description: 'Lihat Radar Watchlist' },
+      { command: 'add', description: 'Tambah Saham ke Radar' },
+      { command: 'del', description: 'Hapus Saham dari Radar' },
+      { command: 'setbalance', description: 'Atur Modal untuk Risk Management' },
+      { command: 'help', description: 'Panduan Penggunaan Bot' }
+    ]).then(() => logger.info('Telegram Command Menu updated.'));
   }
 
   // Hanya pasang listener jika polling aktif
   if (options.polling) {
-    bot.onText(/\/technical\s+([A-Za-z0-9]+)/i, (msg, match) => {
-      handleDualCek(msg, match[1].toUpperCase());
+    bot.onText(/\/technical(?:\s+([A-Za-z0-9]+))?$/i, (msg, match) => {
+      const ticker = match[1];
+      if (!ticker) {
+        return bot.sendMessage(msg.chat.id, `💡 **Cara Penggunaan:**\nKetik \`/technical [TICKER]\`\nContoh: \`/technical BBCA\``, { parse_mode: 'Markdown' });
+      }
+      handleDualCek(msg, ticker.toUpperCase());
     });
 
-    bot.onText(/\/analysis\s+([A-Za-z0-9]+)/i, async (msg, match) => {
-      const ticker = match[1].toUpperCase();
+    bot.onText(/\/analysis(?:\s+([A-Za-z0-9]+))?$/i, async (msg, match) => {
+      const ticker = match[1]?.toUpperCase();
       
-      // Basic validation for IDX tickers (usually 4 chars, max 6 for warrants)
-      if (ticker.length < 4 || ticker.length > 6) {
-        return bot.sendMessage(msg.chat.id, `⚠️ Ticker *$${ticker}* tidak valid. Kode saham IDX biasanya 4 huruf.`, { parse_mode: 'Markdown' });
+      if (!ticker) {
+        return bot.sendMessage(msg.chat.id, `💡 **Cara Penggunaan:**\nKetik \`/analysis [TICKER]\`\nContoh: \`/analysis BBCA\``, { parse_mode: 'Markdown' });
       }
 
       const loading = await bot.sendMessage(msg.chat.id, `🧬 **Zenith AI Hybrid Engine** sedang memproses *$${ticker}*...\n\n_Menganalisa data teknikal & sentimen AI..._`, { parse_mode: 'Markdown' });
@@ -113,12 +128,11 @@ function init(options = { polling: true }) {
       }
     });
 
-    bot.onText(/\/news\s+([A-Za-z0-9]+)/i, async (msg, match) => {
-      const ticker = match[1].toUpperCase();
+    bot.onText(/\/news(?:\s+([A-Za-z0-9]+))?$/i, async (msg, match) => {
+      const ticker = match[1]?.toUpperCase();
       
-      // Basic validation for IDX tickers (usually 4 chars, max 6 for warrants)
-      if (ticker.length < 4 || ticker.length > 6) {
-        return bot.sendMessage(msg.chat.id, `⚠️ Ticker *$${ticker}* tidak valid.\n\nKode saham IDX biasanya terdiri dari 4 huruf (contoh: BBCA, ASII).`, { parse_mode: 'Markdown' });
+      if (!ticker) {
+        return bot.sendMessage(msg.chat.id, `💡 **Cara Penggunaan:**\nKetik \`/news [TICKER]\`\nContoh: \`/news BBCA\``, { parse_mode: 'Markdown' });
       }
 
       const loading = await bot.sendMessage(msg.chat.id, `📰 Mencari berita & Menganalisa Sentimen *$${ticker}*...`, { parse_mode: 'Markdown' });
@@ -153,12 +167,11 @@ function init(options = { polling: true }) {
       }
     });
 
-    bot.onText(/\/add\s+([A-Za-z0-9]+)/i, async (msg, match) => {
-      const ticker = match[1].toUpperCase();
+    bot.onText(/\/add(?:\s+([A-Za-z0-9]+))?$/i, async (msg, match) => {
+      const ticker = match[1]?.toUpperCase();
       
-      // Basic validation
-      if (ticker.length < 4 || ticker.length > 6) {
-        return bot.sendMessage(msg.chat.id, `⚠️ Ticker *$${ticker}* tidak valid. Kode saham IDX biasanya 4 huruf.`, { parse_mode: 'Markdown' });
+      if (!ticker) {
+        return bot.sendMessage(msg.chat.id, `💡 **Cara Penggunaan:**\nKetik \`/add [TICKER]\`\nContoh: \`/add BBCA\``, { parse_mode: 'Markdown' });
       }
 
       const status = await bot.sendMessage(msg.chat.id, `🔍 Memverifikasi *$${ticker}* di bursa...`, { parse_mode: 'Markdown' });
@@ -187,8 +200,12 @@ function init(options = { polling: true }) {
       }
     });
 
-    bot.onText(/\/del\s+([A-Za-z0-9]+)/i, async (msg, match) => {
-      const ticker = match[1].toUpperCase();
+    bot.onText(/\/del(?:\s+([A-Za-z0-9]+))?$/i, async (msg, match) => {
+      const ticker = match[1]?.toUpperCase();
+      
+      if (!ticker) {
+        return bot.sendMessage(msg.chat.id, `💡 **Cara Penggunaan:**\nKetik \`/del [TICKER]\`\nContoh: \`/del BBCA\``, { parse_mode: 'Markdown' });
+      }
       try {
         const changes = await dbService.deleteTicker(ticker);
         if (changes > 0) {
@@ -240,7 +257,8 @@ function init(options = { polling: true }) {
                       `• \`/setbalance [jumlah]\` - Atur modal trading Anda.\n` +
                       `• Contoh: \`/setbalance 10000000\`\n\n` +
                       `💡 *TIPS*\n` +
-                      `Gunakan \`/analysis\` untuk mendapatkan keyakinan penuh sebelum melakukan entry saham.\n\n` +
+                      `• Gunakan \`/analysis\` untuk mendapatkan keyakinan penuh sebelum melakukan entry saham.\n` +
+                      `• Gunakan \`/setbalance [nominal]\` agar bot bisa menghitung jumlah lot yang aman sesuai modal Anda.\n\n` +
                       `_Developed with ❤️ for Indonesian Traders_`;
       bot.sendMessage(msg.chat.id, helpMsg, { parse_mode: 'Markdown' });
     });
@@ -250,6 +268,27 @@ function init(options = { polling: true }) {
                        `Saya akan membantu Anda mencari momentum terbaik di bursa saham Indonesia menggunakan algoritma *Adaptive ATR* & *Balanced Technical Scoring*.\n\n` +
                        `Ketik \`/help\` untuk melihat daftar perintah.`;
       bot.sendMessage(msg.chat.id, startMsg, { parse_mode: 'Markdown' });
+    });
+
+    // Catch-all: Jika user mengetik pesan yang bukan perintah (Sesuai Permintaan User)
+    bot.on('message', (msg) => {
+      // Pastikan bukan perintah yang sudah terdaftar
+      if (msg.text && !msg.text.startsWith('/')) {
+        const fallbackMsg = `⚠️ **Perintah tidak dikenali.**\n\n` +
+                            `Saya tidak mengerti pesan: "_${msg.text}_"\n\n` +
+                            `💡 **Tips:** Gunakan menu tombol di pojok kiri bawah atau ketik \`/help\` untuk melihat daftar perintah yang tersedia.\n\n` +
+                            `Contoh: ketik \`/analysis BBCA\` untuk menganalisa saham BBCA.`;
+        bot.sendMessage(msg.chat.id, fallbackMsg, { parse_mode: 'Markdown' });
+      }
+    });
+
+    // Handle Polling Errors (Network Timeout, etc)
+    bot.on('polling_error', (err) => {
+      if (err.message.includes('ETIMEDOUT') || err.message.includes('EFATAL')) {
+        logger.warn('Telegram Polling Timeout. Mencoba menyambung kembali...');
+      } else {
+        logger.error('Telegram Polling Error:', err.message);
+      }
     });
   }
 

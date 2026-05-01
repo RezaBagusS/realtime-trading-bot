@@ -52,7 +52,11 @@ async function scrapeGoogleNews(ticker, timeframe = '7d') {
       };
     });
   } catch (err) {
-    logger.error(`Error fetching Google News for ${ticker}:`, err.message);
+    if (err.message.includes('ENOTFOUND') || err.message.includes('ETIMEDOUT')) {
+      logger.warn(`Masalah Koneksi (DNS/Network) saat mengambil berita $${ticker}. Melewati...`);
+    } else {
+      logger.error(`Error fetching Google News for ${ticker}:`, err.message);
+    }
     return [];
   }
 }

@@ -208,6 +208,7 @@ async function formatHybridAnalysis(ticker, technicalData, sentimentData, market
     const estValue = maxLots * 100 * entryBase;
 
     riskInfo = `🛡️ **RISK MANAGEMENT:**\n` +
+               `• Modal Tersedia: \`Rp ${userSettings.balance.toLocaleString('id-ID')}\` \n` +
                `• Max Risk (${userSettings.risk_percent}%): \`Rp ${Math.floor(riskAmount).toLocaleString('id-ID')}\` \n` +
                `• Rekomendasi: \`${maxLots} Lot\`\n` +
                `• Est. Value: \`Rp ${estValue.toLocaleString('id-ID')}\` \n\n`;
