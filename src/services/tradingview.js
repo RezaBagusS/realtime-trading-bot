@@ -1,7 +1,7 @@
-const TradingView = require('@mathieuc/tradingview');
-const config = require('../config');
-const logger = require('../utils/logger');
-const indicators = require('../utils/indicators');
+import TradingView from '@mathieuc/tradingview';
+import config from '../config/index.js';
+import logger from '../utils/logger.js';
+import * as indicators from '../utils/indicators.js';
 
 let client = null;
 
@@ -145,4 +145,5 @@ async function getHistory(ticker, timeframe = 'D', range = 350) {
   });
 }
 
-module.exports = { analyze, getHistory, getMarketStatus };
+export { analyze, getHistory, getMarketStatus };
+export default { analyze, getHistory, getMarketStatus };

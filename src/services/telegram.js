@@ -1,11 +1,11 @@
-const TelegramBot = require('node-telegram-bot-api');
-const config = require('../config');
-const tvService = require('./tradingview');
-const dbService = require('./database');
-const formatter = require('../utils/formatter');
-const logger = require('../utils/logger');
-const newsService = require('./news');
-const aiService = require('./ai');
+import TelegramBot from 'node-telegram-bot-api';
+import config from '../config/index.js';
+import * as tvService from './tradingview.js';
+import dbService from './database.js';
+import * as formatter from '../utils/formatter.js';
+import logger from '../utils/logger.js';
+import * as newsService from './news.js';
+import * as aiService from './ai.js';
 
 let bot;
 
@@ -73,19 +73,25 @@ function init(options = { polling: true }) {
         return bot.sendMessage(msg.chat.id, `⚠️ Ticker *$${ticker}* tidak valid. Kode saham IDX biasanya 4 huruf.`, { parse_mode: 'Markdown' });
       }
 
-      const loading = await bot.sendMessage(msg.chat.id, `🧬 **Hybrid Engine v4.0** sedang memproses *$${ticker}*...\n\n_Menganalisa data teknikal & sentimen AI..._`, { parse_mode: 'Markdown' });
+      const loading = await bot.sendMessage(msg.chat.id, `🧬 **Zenith AI Hybrid Engine** sedang memproses *$${ticker}*...\n\n_Menganalisa data teknikal & sentimen AI..._`, { parse_mode: 'Markdown' });
       
       try {
-        const [technicalData, news, marketStatus] = await Promise.all([
+        const [technicalData, news, marketStatus, userSettings] = await Promise.all([
           tvService.analyze(ticker, config.thresholds.swing),
           newsService.getLatestNews(ticker),
-          tvService.getMarketStatus()
+          tvService.getMarketStatus(),
+          dbService.getUserSettings(msg.chat.id)
         ]);
 
         // Panggil Gemini AI untuk analisa sentimen
         const sentiment = await aiService.analyzeSentiment(ticker, news);
         
-        const report = formatter.formatHybridAnalysis(ticker, technicalData, sentiment, marketStatus);
+        const { report, hybridScore } = await formatter.formatHybridAnalysis(ticker, technicalData, sentiment, marketStatus, userSettings);
+
+        // 1. Simpan Sinyal ke History jika Skor >= 70
+        if (hybridScore >= 70) {
+          await dbService.saveSignal(ticker, technicalData.price, 'SWING', hybridScore);
+        }
         
         await bot.editMessageText(report, {
           chat_id: msg.chat.id,
@@ -208,8 +214,18 @@ function init(options = { polling: true }) {
       }
     });
 
+    bot.onText(/\/setbalance\s+(\d+)/i, async (msg, match) => {
+      const balance = parseFloat(match[1]);
+      try {
+        await dbService.setUserBalance(msg.chat.id, balance);
+        bot.sendMessage(msg.chat.id, `💰 **Modal Berhasil Diatur:** Rp ${balance.toLocaleString('id-ID')}\n\n_Bot sekarang akan menghitung rekomendasi lot otomatis untuk Anda._`, { parse_mode: 'Markdown' });
+      } catch (err) {
+        bot.sendMessage(msg.chat.id, `❌ Gagal mengatur modal.`);
+      }
+    });
+
     bot.onText(/\/help/i, (msg) => {
-      const helpMsg = `🤖 *IDX Signal Bot v4.0*\n` +
+      const helpMsg = `🤖 *Zenith AI Trading Engine v4.5*\n` +
                       `_The Hybrid Engine Edition_\n\n` +
                       `Selamat datang! Gunakan perintah berikut untuk mengoperasikan bot:\n\n` +
                       `💎 *INTELLIGENCE ANALYST*\n` +
@@ -220,6 +236,9 @@ function init(options = { polling: true }) {
                       `• \`/add [ticker]\` - Tambahkan saham ke radar pemantauan otomatis.\n` +
                       `• \`/del [ticker]\` - Hapus saham dari radar.\n` +
                       `• \`/list\` - Tampilkan semua saham di radar.\n\n` +
+                      `💰 *RISK MANAGEMENT*\n` +
+                      `• \`/setbalance [jumlah]\` - Atur modal trading Anda.\n` +
+                      `• Contoh: \`/setbalance 10000000\`\n\n` +
                       `💡 *TIPS*\n` +
                       `Gunakan \`/analysis\` untuk mendapatkan keyakinan penuh sebelum melakukan entry saham.\n\n` +
                       `_Developed with ❤️ for Indonesian Traders_`;
@@ -227,7 +246,7 @@ function init(options = { polling: true }) {
     });
 
     bot.onText(/\/start/, (msg) => {
-      const startMsg = `🤖 *Halo Trader! Saya adalah IDX Smart Signal Bot.*\n\n` +
+      const startMsg = `🤖 *Halo Trader! Saya adalah Zenith AI Trading Engine.*\n\n` +
                        `Saya akan membantu Anda mencari momentum terbaik di bursa saham Indonesia menggunakan algoritma *Adaptive ATR* & *Balanced Technical Scoring*.\n\n` +
                        `Ketik \`/help\` untuk melihat daftar perintah.`;
       bot.sendMessage(msg.chat.id, startMsg, { parse_mode: 'Markdown' });
@@ -238,4 +257,7 @@ function init(options = { polling: true }) {
   return bot;
 }
 
-module.exports = { init, getBot: () => bot };
+const getBot = () => bot;
+
+export { init, getBot };
+export default { init, getBot };

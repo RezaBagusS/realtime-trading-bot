@@ -1,4 +1,4 @@
-# 🗺️ Project Roadmap: IDX Smart Trading Bot
+# 🗺️ Project Roadmap: Zenith AI Trading Engine
 
 Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intelligence ➔ Monetization**.
 
@@ -26,10 +26,15 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [x] **Gemini AI Sentiment Analysis (v3.9):** Ekstraksi sentimen (-1 s/d 1) menggunakan model Gemini 2.5 Flash. (COMPLETED)
 - [x] **Input Validation & Robust Error Handling (v3.9.5):** Verifikasi ticker real-time dan penanganan error yang user-friendly. (COMPLETED)
 - [x] **Hybrid Decision Engine (v4.0):** Gabungan skor teknikal (70%) dan skor sentimen (30%). (COMPLETED)
+- [x] **Sentiment Caching:** Menghemat kuota API Gemini (TTL 1 Jam). (COMPLETED)
+- [x] **Risk & Position Sizing:** Kalkulator Lot & Management Resiko. (COMPLETED)
+- [x] **Signal Tracker:** Mencatat performa sinyal (Real Winrate). (COMPLETED)
+- [x] **Dynamic Weighting:** Penyesuaian bobot berdasarkan tipe saham. (COMPLETED)
 
 ### 3. Professional Metrics
 - [ ] **Portfolio Drawdown Analysis:** Menghitung resiko penurunan modal secara historis.
 - [ ] **Sharpe Ratio & Profit Factor:** Metrik profesional untuk menilai efisiensi strategi.
+- [ ] **Supabase Migration:** Pindah ke database cloud untuk stabilitas. (HOLD)
 
 ---
 
@@ -39,4 +44,4 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [ ] **Web Dashboard Analytics.**
 
 ---
-*Dokumentasi telah disinkronkan dengan Source Code v4.0 - 01 Mei 2026*
+*Dokumentasi telah disinkronkan dengan Source Code v4.5 - 01 Mei 2026*

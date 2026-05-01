@@ -1,11 +1,17 @@
-# 🚀 IDX Smart Trading Bot v4.0 (The Hybrid Engine Edition)
+# 🚀 Zenith AI Trading Engine v4.5
+**Professional-Grade Hybrid Decision Engine for IDX Stocks**
 
-Bot sinyal trading otomatis untuk saham IDX (Indonesia Stock Exchange) yang menggabungkan analisa teknikal pro, kecerdasan buatan (Gemini AI), manajemen resiko adaptif, kesadaran kondisi pasar global (IHSG), dan agregasi berita real-time.
+Zenith AI Trading Engine adalah bot sinyal trading canggih yang menggabungkan kekuatan **Analisis Teknikal (70%)** dan **AI Sentiment (30%)** untuk memberikan sinyal yang akurat, jujur, dan berintegritas tinggi bagi trader bursa saham Indonesia.
 
-## ✨ Fitur Utama
-- **💎 Hybrid Decision Engine (v4.0):** Menggabungkan **Technical Analysis (70%)** dan **AI Sentiment (30%)** untuk memberikan sinyal trading paling akurat dengan tingkat kepercayaan tinggi.
-- **🤖 AI Sentiment Analysis (v3.9.5):** Integrasi **Gemini 2.5 Flash** untuk menganalisis sentimen berita secara otomatis (-1 s/d 1) dan memberikan ringkasan eksekutif.
-- **🛡️ Robust Input Validation:** Verifikasi emiten secara real-time ke bursa sebelum ditambahkan ke watchlist untuk mencegah data sampah.
+## ✨ Fitur Utama (v4.5 Pro Edition)
+*   🧠 **Hybrid AI Decision Engine**: Menggunakan Gemini 1.5/2.5 Flash untuk menganalisa berita bursa secara kritis (Anti-Clickbait).
+*   📊 **Professional Indicators**: Kalkulasi MACD, StochRSI, dan Support/Resistance yang presisi (Standard Industri).
+*   🛡️ **Risk Management**: Kalkulasi otomatis besaran Lot dan Risk/Reward Ratio per transaksi.
+*   📈 **Real Win-rate Tracker**: Menampilkan statistik performa nyata dari database, bukan angka simulasi.
+*   ⚡ **Modern Architecture**: Berjalan sepenuhnya di **Node.js ESM (ECMAScript Modules)**.
+*   💾 **Persistent AI Cache**: Menghemat kuota API dengan menyimpan hasil analisa sentimen di database SQLite.
+*   📅 **Market Awareness**: Mendeteksi kalender libur bursa IDX secara otomatis.
+*   🔄 **API Key Rotation**: Mendukung penggunaan multiple API Keys untuk bypass limit free tier.
 - **IHSG Global Filter (v3.6):** Bot memantau indeks IHSG sebagai *Safety Switch*. Skor saham otomatis dipotong jika kondisi bursa sedang *Bearish*.
 - **Dual-Strategy Detection:** Deteksi otomatis strategi **Scalping (1H)** atau **Swing Trading (Daily)**.
 

@@ -1,5 +1,5 @@
-const config = require('../config');
-const indicators = require('./indicators');
+import * as indicators from './indicators.js';
+import dbService from '../services/database.js';
 
 function calculateScore(data, marketStatus = null) {
   let score = 50; 
@@ -29,11 +29,26 @@ function calculateScore(data, marketStatus = null) {
   // 3. MOMENTUM MACD
   const macd = indicators.calculateMACD(data.rawHistory);
   if (macd.hist > 0) {
-    score += 15;
+    score += 10;
     reasons.push('Momentum MACD Positif');
   }
+  if (macd.crossover) {
+    score += 15;
+    reasons.push('🔥 MACD Bullish Cross');
+  }
 
-  // 4. STRUCTURE
+  // 4. MOMENTUM STOCHRSI
+  const stoch = indicators.calculateStochRSI(data.rawHistory);
+  if (stoch.k < 20) {
+    score += 5;
+    reasons.push('StochRSI Oversold');
+  }
+  if (stoch.crossover) {
+    score += 10;
+    reasons.push('⚡ StochRSI Goldencross');
+  }
+
+  // 5. STRUCTURE
   if (data.price >= data.resistance) {
     score += 15;
     reasons.push('Breakout Resistance Lokal');
@@ -151,11 +166,23 @@ function formatNews(ticker, newsList, aiSentiment = null) {
   return msg;
 }
 
-function formatHybridAnalysis(ticker, technicalData, sentimentData, marketStatus = null) {
+async function formatHybridAnalysis(ticker, technicalData, sentimentData, marketStatus = null, userSettings = null) {
+  const type = indicators.getTickerType(ticker);
+  
+  // Penentuan Bobot Dinamis
+  let tWeight = 0.7; // Default Technical
+  let sWeight = 0.3; // Default Sentiment
+  
+  if (type === 'BLUECHIP') {
+    tWeight = 0.8; sWeight = 0.2;
+  } else if (type === 'SPECULATIVE') {
+    tWeight = 0.3; sWeight = 0.7;
+  }
+
   const tScore = calculateScore(technicalData, marketStatus).total;
   const sScore = Math.round((sentimentData.score + 1) * 50); // Normalize -1..1 to 0..100
   
-  const hybridScore = Math.round((tScore * 0.7) + (sScore * 0.3));
+  const hybridScore = Math.round((tScore * tWeight) + (sScore * sWeight));
   
   let category = getCategory(hybridScore);
   let statusLabel = hybridScore >= 85 ? "High Confidence Signal" : (hybridScore >= 70 ? "Moderate Confidence" : "Low Confidence");
@@ -172,6 +199,20 @@ function formatHybridAnalysis(ticker, technicalData, sentimentData, marketStatus
 
   const isBuy = hybridScore >= 70;
   
+  let riskInfo = "";
+  if (isBuy && userSettings && userSettings.balance > 0) {
+    const riskAmount = userSettings.balance * (userSettings.risk_percent / 100);
+    const riskPerShare = entryBase - sl;
+    const maxShares = Math.floor(riskAmount / riskPerShare);
+    const maxLots = Math.floor(maxShares / 100);
+    const estValue = maxLots * 100 * entryBase;
+
+    riskInfo = `🛡️ **RISK MANAGEMENT:**\n` +
+               `• Max Risk (${userSettings.risk_percent}%): \`Rp ${Math.floor(riskAmount).toLocaleString('id-ID')}\` \n` +
+               `• Rekomendasi: \`${maxLots} Lot\`\n` +
+               `• Est. Value: \`Rp ${estValue.toLocaleString('id-ID')}\` \n\n`;
+  }
+
   let tradingSetup = `📍 **TRADING SETUP:**\n`;
   if (isBuy) {
     tradingSetup += `├─ Buy Zone: \`Rp ${Math.floor(technicalData.ema20 || technicalData.support).toLocaleString('id-ID')} - ${entryBase.toLocaleString('id-ID')}\` \n` +
@@ -182,17 +223,27 @@ function formatHybridAnalysis(ticker, technicalData, sentimentData, marketStatus
     tradingSetup += `_Belum ada trading plan. Tunggu hingga momentum teknikal & sentimen AI sinkron (Hybrid Score > 70)._\n\n`;
   }
 
-  // Fake Winrate based on score for aesthetics (Real one will come in v4.1)
-  const winrate = (65 + (hybridScore / 10) + (marketStatus?.trend === 'BULLISH' ? 5 : -5)).toFixed(1);
-
   const isAiError = sentimentData.summary.includes("(API Error)");
+  const isQuotaLimit = sentimentData.sentiment_label === "LIMITED";
+  
   let insightMsg = sentimentData.summary;
+  
   if (isAiError) {
     insightMsg = `⚠️ _${sentimentData.summary}_\n` +
-                 `💡 *Tips:* Hasil analisa belum maksimal. Silakan ulangi perintah \`/analysis\` dalam 1-2 menit lagi untuk memicu ulang kecerdasan AI.`;
+                 `💡 *Tips:* Hasil analisa belum maksimal. Silakan ulangi perintah \`/analysis\` dalam 1-2 menit lagi.`;
+  } else if (isQuotaLimit) {
+    insightMsg = `⚠️ _Quota AI Free Tier Habis_\n` +
+                 `💡 *Tips:* Bot tetap memberikan analisa teknikal yang akurat (70% bobot). Coba lagi besok atau gunakan API Key berbayar.`;
   }
 
-  return `🚀 **STRATEGI: SWING TRADING**\n` +
+  // REAL Winrate from Signal Tracker (v4.5 Optimization)
+  const stats = await dbService.getWinrateStats();
+  const winrateDisplay = stats.winrate ? `${stats.winrate}% (${stats.resolvedTrades} trades)` : 'New System (Data Pending)';
+
+  const confidence = sentimentData.confidence ? `(Conf: ${(sentimentData.confidence * 100).toFixed(0)}%)` : '';
+  const sLabel = sentimentData.sentiment_label || (sentimentData.score > 0.3 ? 'BULLISH' : (sentimentData.score < -0.3 ? 'BEARISH' : 'NEUTRAL'));
+
+  const report = `🚀 **STRATEGI: SWING TRADING**\n` +
          `${category.color} **$${ticker.toUpperCase()} — ${category.label}**\n\n` +
          `━━━━━━━━━━━━━━━\n` +
          `🏆 **HYBRID SCORE: ${hybridScore}/100**\n` +
@@ -204,12 +255,16 @@ function formatHybridAnalysis(ticker, technicalData, sentimentData, marketStatus
          `• Momentum: ${technicalData.price > technicalData.ema20 ? 'Strong' : 'Stable'}\n\n` +
          `🤖 **AI SENTIMENT (30%)**\n` +
          `\`${sBar} ${sScore}%\` \n` +
-         `• Score: ${sentimentData.score > 0 ? '+' : ''}${sentimentData.score.toFixed(2)} (${sentimentData.score > 0.3 ? 'Bullish' : (sentimentData.score < -0.3 ? 'Bearish' : 'Neutral')})\n` +
+         `• Status: ${sLabel} ${confidence}\n` +
          `• Insight: ${insightMsg}\n\n` +
+         `${riskInfo}` +
          `${tradingSetup}` +
          `━━━━━━━━━━━━━━━\n` +
-         `📈 *Win-rate Historis: ${winrate}% (Kondisi Market ${marketStatus?.trend || 'Neutral'})*\n` +
-         `*Hybrid Engine v4.0: Technical Analysis + Gemini AI Sentiment.*`;
+         `📈 *Win-rate Real: ${winrateDisplay}*\n` +
+         `*Zenith AI Engine v4.5: Integrity & Intelligence.*`;
+
+  return { report, hybridScore };
 }
 
-module.exports = { formatDualAnalysis, formatNews, formatHybridAnalysis };
+export { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis };
+export default { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis };

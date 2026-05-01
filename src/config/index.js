@@ -1,6 +1,6 @@
-require('dotenv').config();
+import 'dotenv/config';
 
-module.exports = {
+export default {
   telegram: {
     token: process.env.TELEGRAM_BOT_TOKEN,
     channelId: process.env.CHANNEL_ID
@@ -10,7 +10,7 @@ module.exports = {
     signature: process.env.TRADINGVIEW_SIGNATURE
   },
   gemini: {
-    apiKey: process.env.GEMINI_API_KEY
+    apiKeys: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.split(',').map(k => k.trim()) : []
   },
   thresholds: {
     scalp: {
@@ -33,7 +33,7 @@ module.exports = {
     }
   },
   watchList: [
-    'BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII', 
+    'BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII',
     'GOTO', 'UNVR', 'ADRO', 'AMRT', 'ICBP'
   ]
 };

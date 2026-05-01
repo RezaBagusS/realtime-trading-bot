@@ -2,13 +2,13 @@
  * MAIN ENTRY POINT
  * Trading Signal Bot v3.9 (The AI Sentiment Edition)
  */
-const telegramService = require('./src/services/telegram');
-const screenerService = require('./src/services/screener');
-const dbService = require('./src/services/database');
-const logger = require('./src/utils/logger');
+import telegramService from './src/services/telegram.js';
+import screenerService from './src/services/screener.js';
+import dbService from './src/services/database.js';
+import logger from './src/utils/logger.js';
 
 function bootstrap() {
-  logger.info('Starting IDX Signal Bot v4.0 (The Hybrid Engine Edition)...');
+  logger.info('Starting Zenith AI Trading Engine v4.5 (Integrity & Trust Edition)...');
   
   try {
     // 1. Inisialisasi Database

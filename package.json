@@ -1,5 +1,5 @@
 {
-  "name": "trading-signal-bot",
+  "name": "zenith-ai-trading-engine",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@mathieuc/tradingview": "^3.5.2",

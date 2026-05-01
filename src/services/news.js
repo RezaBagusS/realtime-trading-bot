@@ -1,7 +1,7 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
-const Parser = require('rss-parser');
-const logger = require('../utils/logger');
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+import Parser from 'rss-parser';
+import logger from '../utils/logger.js';
 
 const parser = new Parser();
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36';
@@ -80,4 +80,5 @@ async function getLatestNews(ticker) {
   return news;
 }
 
-module.exports = { getLatestNews };
+export { getLatestNews };
+export default { getLatestNews };

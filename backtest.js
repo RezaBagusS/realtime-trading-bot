@@ -2,9 +2,9 @@
  * ADVANCED BACKTESTER v1.15
  * Sync with Logic v3.6 (IHSG Global Filter)
  */
-require('dotenv').config();
-const tvService = require('./src/services/tradingview');
-const indicators = require('./src/utils/indicators');
+import 'dotenv/config';
+import * as tvService from './src/services/tradingview.js';
+import * as indicators from './src/utils/indicators.js';
 
 function getSimulatedScore(snapshot, marketTrend) {
   let score = 50;
