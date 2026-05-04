@@ -68,7 +68,7 @@ docker logs -f zenith-ai-trading-bot
 ```
 
 ### 3. Pemeliharaan & Update
-*   **Restart/Update Bot**: (Jalankan setelah Anda mengubah file `.env`)
+*   **Restart/Update Bot**: (Jalankan perintah ini setiap kali Anda melakukan perubahan konfigurasi pada file `.env` atau pembaruan *source code*):
     ```bash
     docker-compose up -d --build
     ```
