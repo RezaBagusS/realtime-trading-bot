@@ -74,6 +74,14 @@ function init(options = { polling: true }) {
 
   // Hanya pasang listener jika polling aktif
   if (options.polling) {
+    // Middleware-like logging: Log setiap aktivitas user (Sesuai Permintaan User)
+    bot.on('message', (msg) => {
+      if (msg.text) {
+        const user = msg.from.username || msg.from.first_name || 'Unknown';
+        logger.info(`[TELEGRAM] ${user} (${msg.from.id}): ${msg.text}`);
+      }
+    });
+
     bot.onText(/\/technical(?:\s+([A-Za-z0-9]+))?$/i, (msg, match) => {
       const ticker = match[1];
       if (!ticker) {

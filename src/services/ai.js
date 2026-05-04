@@ -99,7 +99,7 @@ async function analyzeSentiment(ticker, newsItems) {
   // 1. Cek Cache Database (Persistent)
   let cachedData = await dbService.getAiCache(ticker);
   if (cachedData) {
-    logger.info(`Cache HIT (DB): ${ticker}`);
+    logger.info(`[CACHE] Hit DB untuk $${ticker.toUpperCase()}`);
     return cachedData;
   }
 
@@ -107,7 +107,7 @@ async function analyzeSentiment(ticker, newsItems) {
   const cacheKey = `sentiment_${ticker.toUpperCase()}`;
   cachedData = cache.get(cacheKey);
   if (cachedData) {
-    logger.info(`Cache HIT (Memory): ${ticker}`);
+    logger.info(`[CACHE] Hit Memory untuk $${ticker.toUpperCase()}`);
     return cachedData;
   }
 
@@ -153,6 +153,7 @@ async function analyzeSentiment(ticker, newsItems) {
     await dbService.setAiCache(ticker, parsed, 120);
     cache.set(cacheKey, parsed, 120);
     
+    logger.success(`[AI] Berhasil menganalisa $${ticker.toUpperCase()} (Score: ${parsed.score})`);
     return parsed;
 
   } catch (err) {

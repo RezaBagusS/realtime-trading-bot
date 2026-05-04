@@ -215,3 +215,5 @@
 2026-05-04 10:01:38: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
 2026-05-04 10:01:38: [INFO] Terhubung ke database SQLite.
 2026-05-04 10:01:40: [INFO] Telegram Command Menu updated.
+2026-05-04 10:05:54: [INFO] Skipping AI for DEWA due to low technical score (15)
+2026-05-04 10:06:15: [INFO] Skipping AI for BBNI due to low technical score (30)
