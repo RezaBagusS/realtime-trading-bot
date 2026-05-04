@@ -112,7 +112,6 @@ async function runHunter(bot) {
   logger.info(`Hunter: Menemukan ${candidates.length} kandidat potensial. Memulai verifikasi AI...`);
   
   const marketStatus = await tvService.getMarketStatus();
-  
   let foundCount = 0;
   for (const candidate of candidates) {
     const success = await processHunterTicker(candidate, marketStatus, bot);
@@ -122,7 +121,17 @@ async function runHunter(bot) {
     await new Promise(r => setTimeout(r, 3000));
   }
 
-  logger.success(`Hunter: Sesi selesai. ${foundCount} saham "buruan" dikirim ke channel.`);
+  if (foundCount === 0) {
+    await bot.sendMessage(config.telegram.channelId, 
+      `🎯 **ZENITH MARKET HUNTER (15:30 WIB)**\n\n` +
+      `Sesi berburu hari ini telah selesai. Namun, **belum ada saham di luar radar yang memenuhi kriteria ketat** (Inflow & Momentum 52W High).\n\n` +
+      `💡 _Tetap pantau bursa, peluang terbaik seringkali datang saat pasar sedang sepi._`,
+      { parse_mode: 'Markdown' }
+    );
+    logger.info('Hunter: Tidak ada saham layak buru ditemukan.');
+  } else {
+    logger.success(`Hunter: Sesi selesai. ${foundCount} saham "buruan" dikirim ke channel.`);
+  }
 }
 
 function init(bot) {
