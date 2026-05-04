@@ -57,20 +57,24 @@ async function processTicker(ticker, marketStatus, bot) {
     // 2. Ambil Berita & Analisa AI hanya untuk yang lolos filter
     const news = await newsService.getLatestNews(ticker);
     const sentiment = await aiService.analyzeSentiment(ticker, news);
+    logger.info(`Screener: Sentiment AI untuk $${ticker} selesai.`);
 
     // 3. Generate Hybrid Report
     const { report, hybridScore } = await formatter.formatHybridAnalysis(ticker, technicalData, sentiment, marketStatus);
     
     // Kirim alert jika skor Hybrid >= 70
     if (hybridScore >= 70) {
+      logger.info(`Screener: $${ticker} LOLOS filter (Hybrid Score: ${hybridScore}). Mengirim alert...`);
       await dbService.saveSignal(ticker, technicalData.price, 'SWING', hybridScore);
       await bot.sendMessage(config.telegram.channelId, `📢 **AUTO-SIGNAL: HYBRID RADAR**\n\n${report}`, { 
         parse_mode: 'Markdown',
         disable_web_page_preview: true 
       });
-      logger.success(`Hybrid Signal ditemukan untuk ${ticker}, alert dikirim.`);
+      logger.success(`[CHANNEL] Sinyal $${ticker} berhasil dikirim ke channel.`);
       return true; // Sinyal ditemukan
     }
+    
+    logger.info(`Screener: $${ticker} tidak lolos filter (Hybrid Score: ${hybridScore} < 70).`);
     return false; // Tidak ada sinyal
   } catch (err) {
     logger.error(`Screener gagal untuk ${ticker}:`, err.message);
@@ -121,13 +125,17 @@ async function runScreener(bot) {
   // Jika tidak ada saham yang layak (Hybrid Score < 70)
   if (totalSignals === 0) {
     const timeStr = new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' });
+    logger.info('Screener: Tidak ada saham layak beli ditemukan. Mengirim laporan status ke channel...');
+    
     await bot.sendMessage(config.telegram.channelId, 
       `📝 **LAPORAN RADAR (${timeStr} WIB)**\n\n` +
       `Hasil pemindaian terhadap ${watchList.length} saham di radar menunjukkan **belum ada saham yang mencapai ambang batas layak beli (Hybrid Score >= 70).**\n\n` +
       `💡 _Saran: Tetap disiplin & tunggu momentum sinkron antara teknikal & sentimen._`,
       { parse_mode: 'Markdown' }
     );
-    logger.info('Screener: Tidak ada saham layak beli ditemukan.');
+    logger.success('[CHANNEL] Laporan status "Belum Ada Saham Layak" berhasil dikirim.');
+  } else {
+    logger.success(`[SCREENER] Sesi selesai. Total ${totalSignals} sinyal dikirim ke channel.`);
   }
 }
 

@@ -210,3 +210,11 @@
 2026-05-04 10:22:48: [WARN] ⚠️ Shutting down gracefully...
 2026-05-04 10:23:26: [ERROR] TradingView Client Error: Client critical error:
 2026-05-04 10:25:24: [ERROR] TradingView Client Error: Client critical error:
+2026-05-04 11:00:25: [ERROR] TradingView Client Error: Client critical error:
+2026-05-04 11:00:26: [ERROR] Screener gagal untuk PTRO: Sistem sedang memulihkan koneksi ke TradingView. Mohon tunggu 14 detik.
+2026-05-04 11:00:26: TypeError: Cannot read properties of undefined (reading 'sendMessage')
+2026-05-04 11:00:26:     at runScreener (file:///Users/apple/Documents/Project/open-claw/trading-signal-bot/src/services/screener.js:124:15)
+2026-05-04 11:00:26: [ERROR] Unhandled Rejection: TypeError: Cannot read properties of undefined (reading 'sendMessage')
+2026-05-04 11:00:26:     at runScreener (file:///Users/apple/Documents/Project/open-claw/trading-signal-bot/src/services/screener.js:124:15)
+2026-05-04 11:00:26: [ERROR] Unhandled Rejection: TypeError: Cannot read properties of undefined (reading 'sendMessage')
+2026-05-04 11:00:26:     at runScreener (file:///Users/apple/Documents/Project/open-claw/trading-signal-bot/src/services/screener.js:124:15)
