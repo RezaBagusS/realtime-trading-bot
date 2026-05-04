@@ -31,6 +31,7 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [x] **Signal Tracker:** Mencatat performa sinyal (Real Winrate). (COMPLETED)
 - [x] **Dynamic Weighting:** Penyesuaian bobot berdasarkan tipe saham. (COMPLETED)
 - [x] **Advanced Logging & Monitoring (v4.5):** Pelacakan audit user dan status radar otomatis. (COMPLETED)
+- [x] **Zenith Market Hunter (v5.0):** Modul pemindaian global IHSG berbasis kriteria momentum Stockbit (15:30 WIB). (COMPLETED)
 - [x] **Resilience & Connection Recovery:** Penanganan otomatis untuk gangguan jaringan TradingView/Telegram. (COMPLETED)
 
 ### 3. Professional Metrics
@@ -46,4 +47,4 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [ ] **Web Dashboard Analytics.**
 
 ---
-*Dokumentasi telah disinkronkan dengan Source Code v4.5.5 - 04 Mei 2026*
+*Dokumentasi telah disinkronkan dengan Source Code v5.0 - 04 Mei 2026*

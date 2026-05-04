@@ -15,6 +15,7 @@ Zenith AI Trading Engine adalah bot sinyal trading canggih yang menggabungkan ke
 *   📱 **Professional Telegram UX**: Menu perintah interaktif, validasi input otomatis, sistem bantuan cerdas, dan fitur hitung mundur `/nextscan`.
 *   🌐 **Resilient Connectivity**: Sistem auto-recovery, reconnection cooldown, dan **Advanced Activity Logging** untuk pemantauan audit user.
 *   📡 **Automated Radar Status**: Bot otomatis mengirimkan laporan ke channel jika tidak ada saham yang layak beli dalam satu sesi scanning.
+*   🎯 **Zenith Market Hunter (New)**: Fitur pemburu saham di luar watchlist (Universal Scan) yang berjalan setiap 15:30 WIB untuk mencari saham momentum berdasar kriteria PE, Volume Spike, dan 52W High.
 - **IHSG Global Filter (v3.6):** Bot memantau indeks IHSG sebagai *Safety Switch*. Skor saham otomatis dipotong jika kondisi bursa sedang *Bearish*.
 - **Dual-Strategy Detection:** Deteksi otomatis strategi **Scalping (1H)** atau **Swing Trading (Daily)**.
 

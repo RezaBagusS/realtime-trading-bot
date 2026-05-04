@@ -306,3 +306,29 @@
 2026-05-04 11:00:24: [INFO] Tidak ada berita 7 hari terakhir untuk $BMTR, mencoba 30 hari...
 2026-05-04 11:00:24: [INFO] [CACHE] Hit DB untuk $BMTR
 2026-05-04 11:14:43: [INFO] [TELEGRAM] muezzaid (1446970646): /nextscan
+2026-05-04 11:17:14: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 11:17:14: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 11:17:14: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 11:17:14: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 11:17:14: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 11:17:14: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 11:17:14: [INFO] Terhubung ke database SQLite.
+2026-05-04 11:17:15: [INFO] Telegram Command Menu updated.
+2026-05-04 11:43:17: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 11:43:17: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 11:43:17: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 11:43:17: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 11:43:17: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 11:43:17: [INFO] Market Hunter Service Initialized (Schedule: 15:30 WIB)
+2026-05-04 11:43:17: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 11:43:17: [INFO] Terhubung ke database SQLite.
+2026-05-04 11:43:18: [INFO] Telegram Command Menu updated.
+2026-05-04 11:45:11: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 11:45:11: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 11:45:11: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 11:45:11: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 11:45:11: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 11:45:11: [INFO] Market Hunter Service Initialized (Schedule: 15:30 WIB)
+2026-05-04 11:45:11: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 11:45:11: [INFO] Terhubung ke database SQLite.
+2026-05-04 11:45:12: [INFO] Telegram Command Menu updated.

@@ -4,6 +4,7 @@
  */
 import telegramService from './src/services/telegram.js';
 import screenerService from './src/services/screener.js';
+import hunterService from './src/services/hunter.js';
 import dbService from './src/services/database.js';
 import logger from './src/utils/logger.js';
 import config from './src/config/index.js';
@@ -22,8 +23,11 @@ function bootstrap() {
     // 2. Inisialisasi Bot Telegram
     telegramService.init();
     
-    // 3. Inisialisasi Auto-Screener
+    // 3. Inisialisasi Auto-Screener (Radar Pribadi)
     screenerService.init(telegramService.bot);
+
+    // 4. Inisialisasi Market Hunter (Pencarian Global 15:30 WIB)
+    hunterService.init(telegramService.bot);
 
     logger.success('Bot is live with Dynamic Watchlist support!');
   } catch (err) {
