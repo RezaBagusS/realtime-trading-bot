@@ -174,3 +174,44 @@
 2026-05-01 10:42:41: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
 2026-05-01 10:42:41: [INFO] Terhubung ke database SQLite.
 2026-05-01 10:42:42: [INFO] Telegram Command Menu updated.
+2026-05-04 09:50:08: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 09:50:08: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 09:50:08: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 09:50:08: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 09:50:08: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 09:50:08: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 09:50:08: [INFO] Terhubung ke database SQLite.
+2026-05-04 09:50:09: [INFO] Telegram Command Menu updated.
+2026-05-04 09:53:43: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 09:53:43: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 09:53:43: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 09:53:43: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 09:53:43: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 09:53:43: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 09:53:43: [INFO] Terhubung ke database SQLite.
+2026-05-04 09:53:44: [INFO] Telegram Command Menu updated.
+2026-05-04 09:54:47: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 09:54:47: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 09:54:47: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 09:54:47: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 09:54:47: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 09:54:47: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 09:54:47: [INFO] Terhubung ke database SQLite.
+2026-05-04 09:54:48: [INFO] Telegram Command Menu updated.
+2026-05-04 10:00:00: [INFO] Memulai Auto-Screener: 5 saham dipantau (Parallel Mode)...
+2026-05-04 10:00:00: [INFO] Screener: $BBRI diskip (Technical Score 5 < 60).
+2026-05-04 10:00:00: [INFO] Screener: $BBCA diskip (Technical Score 15 < 60).
+2026-05-04 10:00:02: [INFO] Screener: $BMTR potensial (Score 70), memanggil AI Sentiment...
+2026-05-04 10:00:02: [INFO] 📰 Mengambil berita terkini untuk $BMTR...
+2026-05-04 10:00:02: [INFO] Screener: $BMRI diskip (Technical Score 10 < 60).
+2026-05-04 10:00:03: [INFO] Tidak ada berita 7 hari terakhir untuk $BMTR, mencoba 30 hari...
+2026-05-04 10:00:16: [INFO] Cache SET: sentiment_BMTR (Expires in 120m)
+2026-05-04 10:00:19: [INFO] Screener: $TLKM diskip (Technical Score 15 < 60).
+2026-05-04 10:01:38: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 10:01:38: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 10:01:38: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 10:01:38: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 10:01:38: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 10:01:38: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 10:01:38: [INFO] Terhubung ke database SQLite.
+2026-05-04 10:01:40: [INFO] Telegram Command Menu updated.

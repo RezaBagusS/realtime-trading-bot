@@ -69,7 +69,9 @@ async function processTicker(ticker, marketStatus, bot) {
         disable_web_page_preview: true 
       });
       logger.success(`Hybrid Signal ditemukan untuk ${ticker}, alert dikirim.`);
+      return true; // Sinyal ditemukan
     }
+    return false; // Tidak ada sinyal
   } catch (err) {
     logger.error(`Screener gagal untuk ${ticker}:`, err.message);
   }
@@ -105,12 +107,27 @@ async function runScreener(bot) {
     chunks.push(watchList.slice(i, i + chunkSize));
   }
 
+  let totalSignals = 0;
   for (const chunk of chunks) {
-    await Promise.all(chunk.map(ticker => processTicker(ticker, marketStatus, bot)));
+    const results = await Promise.all(chunk.map(ticker => processTicker(ticker, marketStatus, bot)));
+    totalSignals += results.filter(r => r === true).length;
+
     // Jeda antar batch agar lebih stabil
     if (chunks.indexOf(chunk) < chunks.length - 1) {
       await new Promise(r => setTimeout(r, 2000));
     }
+  }
+
+  // Jika tidak ada saham yang layak (Hybrid Score < 70)
+  if (totalSignals === 0) {
+    const timeStr = new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' });
+    await bot.sendMessage(config.telegram.channelId, 
+      `📝 **LAPORAN RADAR (${timeStr} WIB)**\n\n` +
+      `Hasil pemindaian terhadap ${watchList.length} saham di radar menunjukkan **belum ada saham yang mencapai ambang batas layak beli (Hybrid Score >= 70).**\n\n` +
+      `💡 _Saran: Tetap disiplin & tunggu momentum sinkron antara teknikal & sentimen._`,
+      { parse_mode: 'Markdown' }
+    );
+    logger.info('Screener: Tidak ada saham layak beli ditemukan.');
   }
 }
 

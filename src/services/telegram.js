@@ -66,6 +66,7 @@ function init(options = { polling: true }) {
       { command: 'list', description: 'Lihat Radar Watchlist' },
       { command: 'add', description: 'Tambah Saham ke Radar' },
       { command: 'del', description: 'Hapus Saham dari Radar' },
+      { command: 'nextscan', description: 'Cek Kapan Radar Berjalan Lagi' },
       { command: 'setbalance', description: 'Atur Modal untuk Risk Management' },
       { command: 'help', description: 'Panduan Penggunaan Bot' }
     ]).then(() => logger.info('Telegram Command Menu updated.'));
@@ -195,9 +196,11 @@ function init(options = { polling: true }) {
           parse_mode: 'Markdown'
         });
       } catch (err) {
-        let errorReason = "Emiten tidak ditemukan di IDX.";
-        if (!err.message.includes('Symbol error') && !err.message.includes('ser_1')) {
-          errorReason = "Terjadi gangguan saat verifikasi. Coba lagi nanti.";
+        let errorReason;
+        if (err.message.includes('Symbol error') || err.message.includes('ser_1')) {
+          errorReason = "Emiten tidak ditemukan di IDX.";
+        } else {
+          errorReason = `Gangguan teknis: \`${err.message}\``;
         }
 
         await bot.editMessageText(`❌ **$${ticker}** gagal ditambahkan.\n\nAlasan: ${errorReason}`, {
@@ -239,7 +242,21 @@ function init(options = { polling: true }) {
       }
     });
 
-    bot.onText(/\/setbalance\s+(\d+)/i, async (msg, match) => {
+    bot.onText(/\/nextscan/i, (msg) => {
+      const now = new Date();
+      const currentMinutes = now.getMinutes();
+      const minutesLeft = 60 - currentMinutes;
+      
+      const nextMsg = `⏳ **Informasi Radar**\n\n` +
+                      `Screener otomatis berjalan setiap awal jam.\n` +
+                      `• **Scan Terakhir:** ${now.getHours()}:00 WIB\n` +
+                      `• **Scan Berikutnya:** dalam **${minutesLeft} menit** (sekitar jam ${now.getHours() + 1}:00 WIB).\n\n` +
+                      `💡 _Bot hanya men-scan saham yang ada di dalam \`/list\` Anda._`;
+      
+      bot.sendMessage(msg.chat.id, nextMsg, { parse_mode: 'Markdown' });
+    });
+
+    bot.onText(/\/setbalance(?:\s+([0-9]+))?$/i, async (msg, match) => {
       const balance = parseFloat(match[1]);
       try {
         await dbService.setUserBalance(msg.chat.id, balance);
@@ -260,7 +277,8 @@ function init(options = { polling: true }) {
                       `📡 *RADAR & WATCHLIST*\n` +
                       `• \`/add [ticker]\` - Tambahkan saham ke radar pemantauan otomatis.\n` +
                       `• \`/del [ticker]\` - Hapus saham dari radar.\n` +
-                      `• \`/list\` - Tampilkan semua saham di radar.\n\n` +
+                      `• \`/list\` - Tampilkan semua saham di radar.\n` +
+                      `• \`/nextscan\` - Cek sisa waktu menuju scan berikutnya.\n\n` +
                       `💰 *RISK MANAGEMENT*\n` +
                       `• \`/setbalance [jumlah]\` - Atur modal trading Anda.\n` +
                       `• Contoh: \`/setbalance 10000000\`\n\n` +
