@@ -1,0 +1,17 @@
+services:
+  zenith-ai-bot:
+    build: .
+    container_name: zenith-ai-trading-bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./trading_bot.db:/app/trading_bot.db
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Jakarta
+      - NODE_ENV=production
+
+networks:
+  default:
+    name: zenith-network

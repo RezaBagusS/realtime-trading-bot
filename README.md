@@ -85,4 +85,26 @@ npm run status
 *   **Database**: SQLite (Local) / Ready for Supabase (Cloud)
 *   **AI**: Google Gemini 1.5/2.5 Flash
 *   **Indicators**: Custom Built (MACD, RSI, ATR, Support/Resistance)
+---
+
+## 🐳 Docker Deployment (Recommended for Production)
+
+Untuk menjalankan bot di server (VPS) menggunakan Docker:
+
+1. **Build & Run:**
+   ```bash
+   docker-compose up -d --build
+   ```
+
+2. **Cek Logs:**
+   ```bash
+   docker logs -f zenith-ai-trading-bot
+   ```
+
+3. **Stop Bot:**
+   ```bash
+   docker-compose down
+   ```
+
+*Pastikan file `.env` sudah terisi dengan benar di folder yang sama sebelum menjalankan command di atas.*
 
