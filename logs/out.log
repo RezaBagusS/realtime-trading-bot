@@ -217,3 +217,80 @@
 2026-05-04 10:01:40: [INFO] Telegram Command Menu updated.
 2026-05-04 10:05:54: [INFO] Skipping AI for DEWA due to low technical score (15)
 2026-05-04 10:06:15: [INFO] Skipping AI for BBNI due to low technical score (30)
+2026-05-04 10:12:24: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 10:12:24: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 10:12:24: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 10:12:24: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 10:12:24: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 10:12:24: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 10:12:24: [INFO] Terhubung ke database SQLite.
+2026-05-04 10:12:25: [INFO] Telegram Command Menu updated.
+2026-05-04 10:12:36: [INFO] [TELEGRAM] muezzaid (1446970646): /help
+2026-05-04 10:13:08: [INFO] [TELEGRAM] muezzaid (1446970646): @muezzatradebot /technical ptro
+2026-05-04 10:14:58: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 10:14:58: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 10:14:58: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 10:14:58: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 10:14:58: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 10:14:58: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 10:14:58: [INFO] Terhubung ke database SQLite.
+2026-05-04 10:14:59: [INFO] Telegram Command Menu updated.
+2026-05-04 10:15:26: [INFO] [TELEGRAM] muezzaid (1446970646): /help
+2026-05-04 10:15:37: [INFO] [TELEGRAM] muezzaid (1446970646): @muezzatradebot /technical
+2026-05-04 10:15:45: [INFO] [TELEGRAM] muezzaid (1446970646): PTRO
+2026-05-04 10:17:07: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 10:17:07: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 10:17:07: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 10:17:07: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 10:17:07: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 10:17:07: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 10:17:07: [INFO] Terhubung ke database SQLite.
+2026-05-04 10:17:09: [INFO] Telegram Command Menu updated.
+2026-05-04 10:17:13: [INFO] [TELEGRAM] muezzaid (1446970646): /help
+2026-05-04 10:17:20: [INFO] [TELEGRAM] muezzaid (1446970646): PTRO
+2026-05-04 10:17:39: [INFO] [TELEGRAM] muezzaid (1446970646): BUMI
+2026-05-04 10:19:44: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 10:19:44: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 10:19:44: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 10:19:44: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 10:19:44: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 10:19:44: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 10:19:44: [INFO] Terhubung ke database SQLite.
+2026-05-04 10:19:46: [INFO] Telegram Command Menu updated.
+2026-05-04 10:19:48: [INFO] [TELEGRAM] muezzaid (1446970646): /help
+2026-05-04 10:19:58: [INFO] [TELEGRAM] muezzaid (1446970646): ptro
+2026-05-04 10:20:08: [INFO] [TELEGRAM] muezzaid (1446970646): bumi
+2026-05-04 10:20:22: [INFO] [TELEGRAM] muezzaid (1446970646): dewa
+2026-05-04 10:22:49: [INFO] 🚀 Zenith AI v4.5: Powering up...
+2026-05-04 10:22:49: [SUCCESS] ✅ ✅ Configuration Validated.
+2026-05-04 10:22:49: [INFO] Tabel Watchlist, User Settings, Signal History, & AI Cache siap.
+2026-05-04 10:22:49: [INFO] Telegram Service Initialized (Polling: true)
+2026-05-04 10:22:49: [INFO] Auto-Screener Service Initialized (Dynamic Database Mode)
+2026-05-04 10:22:49: [SUCCESS] ✅ Bot is live with Dynamic Watchlist support!
+2026-05-04 10:22:49: [INFO] Terhubung ke database SQLite.
+2026-05-04 10:22:50: [INFO] Telegram Command Menu updated.
+2026-05-04 10:22:56: [INFO] [TELEGRAM] muezzaid (1446970646): /help
+2026-05-04 10:23:01: [INFO] [TELEGRAM] muezzaid (1446970646): ptro
+2026-05-04 10:23:01: [INFO] [STATE] User muezzaid mengirim ticker PTRO untuk aksi technical
+2026-05-04 10:23:01: [INFO] [TELEGRAM] muezzaid (1446970646): /technical PTRO
+2026-05-04 10:23:08: [INFO] [TELEGRAM] muezzaid (1446970646): ptro
+2026-05-04 10:23:19: [INFO] [TELEGRAM] muezzaid (1446970646): ptro
+2026-05-04 10:23:19: [INFO] [STATE] User muezzaid mengirim ticker PTRO untuk aksi del
+2026-05-04 10:23:19: [INFO] [TELEGRAM] muezzaid (1446970646): /del PTRO
+2026-05-04 10:23:33: [INFO] [TELEGRAM] muezzaid (1446970646): ptro
+2026-05-04 10:23:33: [INFO] [STATE] User muezzaid mengirim ticker PTRO untuk aksi add
+2026-05-04 10:23:33: [INFO] [TELEGRAM] muezzaid (1446970646): /add PTRO
+2026-05-04 10:23:57: [INFO] [TELEGRAM] muezzaid (1446970646): ptro
+2026-05-04 10:23:57: [INFO] [STATE] User muezzaid mengirim ticker PTRO untuk aksi add
+2026-05-04 10:23:57: [INFO] [TELEGRAM] muezzaid (1446970646): /add PTRO
+2026-05-04 10:24:13: [INFO] [TELEGRAM] muezzaid (1446970646): vktr
+2026-05-04 10:24:13: [INFO] [STATE] User muezzaid mengirim ticker VKTR untuk aksi news
+2026-05-04 10:24:13: [INFO] [TELEGRAM] muezzaid (1446970646): /news VKTR
+2026-05-04 10:24:13: [INFO] 📰 Mengambil berita terkini untuk $VKTR...
+2026-05-04 10:24:23: [INFO] Cache SET: sentiment_VKTR (Expires in 120m)
+2026-05-04 10:24:23: [SUCCESS] ✅ [AI] Berhasil menganalisa $VKTR (Score: -0.4)
+2026-05-04 10:24:58: [INFO] [TELEGRAM] muezzaid (1446970646): vktr
+2026-05-04 10:24:58: [INFO] [STATE] User muezzaid mengirim ticker VKTR untuk aksi analysis
+2026-05-04 10:24:58: [INFO] [TELEGRAM] muezzaid (1446970646): /analysis VKTR
+2026-05-04 10:24:59: [INFO] 📰 Mengambil berita terkini untuk $VKTR...
+2026-05-04 10:24:59: [INFO] [CACHE] Hit DB untuk $VKTR

@@ -30,6 +30,8 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [x] **Risk & Position Sizing:** Kalkulator Lot & Management Resiko. (COMPLETED)
 - [x] **Signal Tracker:** Mencatat performa sinyal (Real Winrate). (COMPLETED)
 - [x] **Dynamic Weighting:** Penyesuaian bobot berdasarkan tipe saham. (COMPLETED)
+- [x] **Advanced Logging & Monitoring (v4.5):** Pelacakan audit user dan status radar otomatis. (COMPLETED)
+- [x] **Resilience & Connection Recovery:** Penanganan otomatis untuk gangguan jaringan TradingView/Telegram. (COMPLETED)
 
 ### 3. Professional Metrics
 - [ ] **Portfolio Drawdown Analysis:** Menghitung resiko penurunan modal secara historis.
@@ -44,4 +46,4 @@ Project ini mengikuti jalur pengembangan evolusioner: **Performance ➔ Intellig
 - [ ] **Web Dashboard Analytics.**
 
 ---
-*Dokumentasi telah disinkronkan dengan Source Code v4.5 - 01 Mei 2026*
+*Dokumentasi telah disinkronkan dengan Source Code v4.5.5 - 04 Mei 2026*

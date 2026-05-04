@@ -8,6 +8,7 @@ import * as newsService from './news.js';
 import * as aiService from './ai.js';
 
 let bot;
+const userStates = new Map(); // Untuk melacak status user (Sesuai Permintaan User)
 
 async function handleDualCek(msg, ticker) {
   const loading = await bot.sendMessage(msg.chat.id, `🔍 Menganalisa *$${ticker}* (1H & Daily)...`, { parse_mode: 'Markdown' });
@@ -74,18 +75,54 @@ function init(options = { polling: true }) {
 
   // Hanya pasang listener jika polling aktif
   if (options.polling) {
-    // Middleware-like logging: Log setiap aktivitas user (Sesuai Permintaan User)
-    bot.on('message', (msg) => {
-      if (msg.text) {
-        const user = msg.from.username || msg.from.first_name || 'Unknown';
-        logger.info(`[TELEGRAM] ${user} (${msg.from.id}): ${msg.text}`);
+    // Middleware-like logging & Unified Message Handling
+    bot.on('message', async (msg) => {
+      if (!msg.text) return;
+      
+      const chatId = msg.chat.id;
+      const user = msg.from.username || msg.from.first_name || 'Unknown';
+      const input = msg.text.trim().toUpperCase();
+
+      logger.info(`[TELEGRAM] ${user} (${chatId}): ${msg.text}`);
+
+      // 1. Cek apakah user sedang dalam status menunggu input ticker
+      const state = userStates.get(chatId);
+      if (state && !msg.text.startsWith('/')) {
+        logger.info(`[STATE] User ${user} mengirim ticker ${input} untuk aksi ${state.action}`);
+        
+        // Bersihkan status agar tidak loop
+        userStates.delete(chatId);
+
+        // Jalankan aksi sesuai status
+        if (state.action === 'analysis') {
+          return bot.processUpdate({ message: { ...msg, text: `/analysis ${input}` } });
+        } else if (state.action === 'technical') {
+          return bot.processUpdate({ message: { ...msg, text: `/technical ${input}` } });
+        } else if (state.action === 'news') {
+          return bot.processUpdate({ message: { ...msg, text: `/news ${input}` } });
+        } else if (state.action === 'add') {
+          return bot.processUpdate({ message: { ...msg, text: `/add ${input}` } });
+        } else if (state.action === 'del') {
+          return bot.processUpdate({ message: { ...msg, text: `/del ${input}` } });
+        }
+      }
+
+      // 2. Catch-all: Jika bukan perintah dan bukan dalam mode state
+      if (!msg.text.startsWith('/') && !msg.text.startsWith('@')) {
+        const fallbackMsg = `⚠️ **Perintah tidak dikenali.**\n\n` +
+                            `Saya tidak mengerti pesan: "_${msg.text}_"\n\n` +
+                            `💡 **Tips:** Gunakan menu tombol di pojok kiri bawah atau ketik \`/help\` untuk melihat daftar perintah yang tersedia.`;
+        bot.sendMessage(chatId, fallbackMsg, { parse_mode: 'Markdown' });
       }
     });
 
     bot.onText(/\/technical(?:\s+([A-Za-z0-9]+))?$/i, (msg, match) => {
       const ticker = match[1];
       if (!ticker) {
-        return bot.sendMessage(msg.chat.id, `💡 **Cara Penggunaan:**\nKetik \`/technical [TICKER]\`\nContoh: \`/technical BBCA\``, { parse_mode: 'Markdown' });
+        return bot.sendMessage(msg.chat.id, `📊 **Analisa Teknikal**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dicek (Contoh: \`PTRO\`).`, { 
+          parse_mode: 'Markdown',
+          reply_markup: { force_reply: true, selective: true }
+        });
       }
       handleDualCek(msg, ticker.toUpperCase());
     });
@@ -94,7 +131,10 @@ function init(options = { polling: true }) {
       const ticker = match[1]?.toUpperCase();
       
       if (!ticker) {
-        return bot.sendMessage(msg.chat.id, `💡 **Cara Penggunaan:**\nKetik \`/analysis [TICKER]\`\nContoh: \`/analysis BBCA\``, { parse_mode: 'Markdown' });
+        return bot.sendMessage(msg.chat.id, `🧬 **Analisa Hybrid (AI)**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dianalisa (Contoh: \`BBCA\`).`, { 
+          parse_mode: 'Markdown',
+          reply_markup: { force_reply: true, selective: true }
+        });
       }
 
       const loading = await bot.sendMessage(msg.chat.id, `🧬 **Zenith AI Hybrid Engine** sedang memproses *$${ticker}*...\n\n_Menganalisa data teknikal & sentimen AI..._`, { parse_mode: 'Markdown' });
@@ -149,7 +189,10 @@ function init(options = { polling: true }) {
       const ticker = match[1]?.toUpperCase();
       
       if (!ticker) {
-        return bot.sendMessage(msg.chat.id, `💡 **Cara Penggunaan:**\nKetik \`/news [TICKER]\`\nContoh: \`/news BBCA\``, { parse_mode: 'Markdown' });
+        return bot.sendMessage(msg.chat.id, `📰 **Cek Berita & Sentimen**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dicari beritanya.`, { 
+          parse_mode: 'Markdown',
+          reply_markup: { force_reply: true, selective: true }
+        });
       }
 
       const loading = await bot.sendMessage(msg.chat.id, `📰 Mencari berita & Menganalisa Sentimen *$${ticker}*...`, { parse_mode: 'Markdown' });
@@ -277,24 +320,67 @@ function init(options = { polling: true }) {
     bot.onText(/\/help/i, (msg) => {
       const helpMsg = `🤖 *Zenith AI Trading Engine v4.5*\n` +
                       `_The Hybrid Engine Edition_\n\n` +
-                      `Selamat datang! Gunakan perintah berikut untuk mengoperasikan bot:\n\n` +
+                      `Gunakan tombol di bawah ini untuk memudahkan Anda memanggil perintah tanpa mengetik manual:\n\n` +
                       `💎 *INTELLIGENCE ANALYST*\n` +
-                      `• \`/analysis [ticker]\` - **Analisa Hybrid (Teknikal + AI).** Rekomendasi paling akurat.\n` +
-                      `• \`/technical [ticker]\` - Analisa teknikal murni (Scalp & Swing).\n` +
-                      `• \`/news [ticker]\` - Baca 5 berita terbaru emiten & Sentimen AI.\n\n` +
+                      `• \`/analysis\` - Analisa Hybrid (Teknikal + AI)\n` +
+                      `• \`/technical\` - Analisa Teknikal Murni\n` +
+                      `• \`/news\` - Berita & Sentimen AI\n\n` +
                       `📡 *RADAR & WATCHLIST*\n` +
-                      `• \`/add [ticker]\` - Tambahkan saham ke radar pemantauan otomatis.\n` +
-                      `• \`/del [ticker]\` - Hapus saham dari radar.\n` +
-                      `• \`/list\` - Tampilkan semua saham di radar.\n` +
-                      `• \`/nextscan\` - Cek sisa waktu menuju scan berikutnya.\n\n` +
-                      `💰 *RISK MANAGEMENT*\n` +
-                      `• \`/setbalance [jumlah]\` - Atur modal trading Anda.\n` +
-                      `• Contoh: \`/setbalance 10000000\`\n\n` +
+                      `• \`/add\` - Tambah Saham ke Radar\n` +
+                      `• \`/del\` - Hapus Saham dari Radar\n` +
+                      `• \`/list\` - Lihat Isi Radar\n\n` +
                       `💡 *TIPS*\n` +
-                      `• Gunakan \`/analysis\` untuk mendapatkan keyakinan penuh sebelum melakukan entry saham.\n` +
-                      `• Gunakan \`/setbalance [nominal]\` agar bot bisa menghitung jumlah lot yang aman sesuai modal Anda.\n\n` +
-                      `_Developed with ❤️ for Indonesian Traders_`;
-      bot.sendMessage(msg.chat.id, helpMsg, { parse_mode: 'Markdown' });
+                      `Klik tombol di bawah untuk langsung mencoba perintah favorit Anda!`;
+
+      bot.sendMessage(msg.chat.id, helpMsg, { 
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '🧬 Analisa Hybrid', callback_data: 'ask_analysis' },
+              { text: '📊 Teknikal', callback_data: 'ask_technical' }
+            ],
+            [
+              { text: '📰 Berita AI', callback_data: 'ask_news' },
+              { text: '📡 Sisa Waktu Scan', callback_data: 'nextscan' }
+            ],
+            [
+              { text: '➕ Tambah Radar', callback_data: 'ask_add' },
+              { text: '➖ Hapus Radar', callback_data: 'ask_del' }
+            ]
+          ]
+        }
+      });
+    });
+
+    // Handle callback queries (Tombol Langsung)
+    bot.on('callback_query', (query) => {
+      const chatId = query.message.chat.id;
+      bot.answerCallbackQuery(query.id);
+
+      if (query.data === 'nextscan') {
+        const now = new Date();
+        const minutesLeft = 60 - now.getMinutes();
+        return bot.sendMessage(chatId, `⏳ **Scan Berikutnya:** dalam **${minutesLeft} menit**.`);
+      }
+
+      const actions = {
+        'ask_analysis': { action: 'analysis', text: '🧬 **Analisa Hybrid (AI)**\n\nSilakan balas pesan ini dengan **Kode Saham** (Contoh: `BBCA`).' },
+        'ask_technical': { action: 'technical', text: '📊 **Analisa Teknikal**\n\nSilakan balas pesan ini dengan **Kode Saham** (Contoh: `PTRO`).' },
+        'ask_news': { action: 'news', text: '📰 **Berita & Sentimen**\n\nSilakan balas pesan ini dengan **Kode Saham**.' },
+        'ask_add': { action: 'add', text: '➕ **Tambah Radar**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dipantau.' },
+        'ask_del': { action: 'del', text: '➖ **Hapus Radar**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dihapus.' }
+      };
+
+      if (actions[query.data]) {
+        // Set State sebelum kirim pesan
+        userStates.set(chatId, { action: actions[query.data].action });
+        
+        bot.sendMessage(chatId, actions[query.data].text, { 
+          parse_mode: 'Markdown', 
+          reply_markup: { force_reply: true, selective: true } 
+        });
+      }
     });
 
     bot.onText(/\/start/, (msg) => {
@@ -304,17 +390,6 @@ function init(options = { polling: true }) {
       bot.sendMessage(msg.chat.id, startMsg, { parse_mode: 'Markdown' });
     });
 
-    // Catch-all: Jika user mengetik pesan yang bukan perintah (Sesuai Permintaan User)
-    bot.on('message', (msg) => {
-      // Pastikan bukan perintah yang sudah terdaftar
-      if (msg.text && !msg.text.startsWith('/')) {
-        const fallbackMsg = `⚠️ **Perintah tidak dikenali.**\n\n` +
-                            `Saya tidak mengerti pesan: "_${msg.text}_"\n\n` +
-                            `💡 **Tips:** Gunakan menu tombol di pojok kiri bawah atau ketik \`/help\` untuk melihat daftar perintah yang tersedia.\n\n` +
-                            `Contoh: ketik \`/analysis BBCA\` untuk menganalisa saham BBCA.`;
-        bot.sendMessage(msg.chat.id, fallbackMsg, { parse_mode: 'Markdown' });
-      }
-    });
 
     // Handle Polling Errors (Network Timeout, etc)
     bot.on('polling_error', (err) => {
