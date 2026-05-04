@@ -5,7 +5,8 @@ import logger from '../utils/logger.js';
 import * as tvService from './tradingview.js';
 import * as formatter from '../utils/formatter.js';
 import * as newsService from './news.js';
-import * as aiService from './ai.js';
+import aiService from './ai.js';
+import telegramService from './telegram.js';
 import dbService from './database.js';
 
 /**
@@ -61,7 +62,8 @@ async function fetchHunterCandidates() {
   }
 }
 
-async function processHunterTicker(candidate, marketStatus, bot) {
+async function processHunterTicker(candidate, marketStatus) {
+  const bot = telegramService.getBot();
   const ticker = candidate.ticker;
   try {
     logger.info(`Hunter: Memproses $${ticker} (Technical Proximity: ${(candidate.proximity * 100).toFixed(1)}%)`);
@@ -99,7 +101,8 @@ async function processHunterTicker(candidate, marketStatus, bot) {
   }
 }
 
-async function runHunter(bot) {
+async function runHunter() {
+  const bot = telegramService.getBot();
   logger.info('🚀 Zenith Market Hunter: Memulai sesi berburu (15:30 WIB)...');
   
   const candidates = await fetchHunterCandidates();
@@ -114,7 +117,7 @@ async function runHunter(bot) {
   const marketStatus = await tvService.getMarketStatus();
   let foundCount = 0;
   for (const candidate of candidates) {
-    const success = await processHunterTicker(candidate, marketStatus, bot);
+    const success = await processHunterTicker(candidate, marketStatus);
     if (success) foundCount++;
     
     // Jeda agar tidak terkena rate limit
@@ -137,7 +140,7 @@ async function runHunter(bot) {
 function init(bot) {
   // Jadwal: Setiap Senin-Jumat jam 15:30 WIB
   cron.schedule('30 15 * * 1-5', () => {
-    runHunter(bot);
+    runHunter();
   }, {
     timezone: "Asia/Jakarta"
   });

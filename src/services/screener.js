@@ -6,6 +6,7 @@ import * as formatter from '../utils/formatter.js';
 import logger from '../utils/logger.js';
 import * as newsService from './news.js';
 import * as aiService from './ai.js';
+import telegramService from './telegram.js';
 
 function isMarketOpen() {
   const now = new Date();
@@ -40,7 +41,8 @@ function isMarketOpen() {
   return false;
 }
 
-async function processTicker(ticker, marketStatus, bot) {
+async function processTicker(ticker, marketStatus) {
+  const bot = telegramService.getBot();
   try {
     // 1. Ambil Data Teknikal Terlebih Dahulu (Filter Utama)
     const technicalData = await tvService.analyze(ticker, config.thresholds.swing);
@@ -81,7 +83,8 @@ async function processTicker(ticker, marketStatus, bot) {
   }
 }
 
-async function runScreener(bot) {
+async function runScreener() {
+  const bot = telegramService.getBot();
   if (!isMarketOpen()) {
     logger.info('Pasar IDX sedang tutup atau hari libur. Auto-Screener dilewati.');
     return;
@@ -113,7 +116,7 @@ async function runScreener(bot) {
 
   let totalSignals = 0;
   for (const chunk of chunks) {
-    const results = await Promise.all(chunk.map(ticker => processTicker(ticker, marketStatus, bot)));
+    const results = await Promise.all(chunk.map(ticker => processTicker(ticker, marketStatus)));
     totalSignals += results.filter(r => r === true).length;
 
     // Jeda antar batch agar lebih stabil
@@ -139,9 +142,9 @@ async function runScreener(bot) {
   }
 }
 
-function init(bot) {
+function init() {
   cron.schedule('0 * * * *', () => {
-    runScreener(bot);
+    runScreener();
   });
   logger.info('Auto-Screener Service Initialized (Dynamic Database Mode)');
 }
