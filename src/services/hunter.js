@@ -22,7 +22,7 @@ async function fetchHunterCandidates() {
         { left: 'price_earnings_ttm', operation: 'less', right: 40 },
         { left: 'relative_volume_10d_calc', operation: 'greater', right: 1.2 },
         { left: 'change', operation: 'greater', right: 1 },
-        { left: 'close', operation: 'greater', right: 100 },
+        { left: 'close', operation: 'greater', right: 200 }, // Minimal Rp 200 menghindari gorengan
         { left: 'type', operation: 'equal', right: 'stock' }
       ],
       options: { lang: 'en' },
@@ -37,7 +37,7 @@ async function fetchHunterCandidates() {
         'price_52_week_high'
       ],
       sort: { sortBy: 'change', sortOrder: 'desc' },
-      range: [0, 15]
+      range: [0, 30] // Ambil 30 untuk memastikan dapet minimal 3-5 yang bagus
     });
 
     if (!response.data || !response.data.data) return [];
@@ -54,7 +54,7 @@ async function fetchHunterCandidates() {
         proximity: item.d[1] / item.d[5] // Price / 52W High
       }))
       .filter(s => s.proximity >= 0.7)
-      .slice(0, 5); // Ambil Top 5 saja sesuai permintaan
+      .slice(0, 10); // Ambil 10 kandidat teratas untuk diverifikasi AI
 
   } catch (err) {
     logger.error('Hunter: Gagal mengambil data scanner:', err.message);
@@ -116,7 +116,11 @@ async function runHunter() {
   
   const marketStatus = await tvService.getMarketStatus();
   let foundCount = 0;
+  
   for (const candidate of candidates) {
+    // Berhenti jika sudah menemukan 5 (Maksimal)
+    if (foundCount >= 5) break;
+
     const success = await processHunterTicker(candidate, marketStatus);
     if (success) foundCount++;
     

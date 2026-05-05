@@ -102,14 +102,17 @@ function formatDualAnalysis(ticker, scalpData, swingData, marketStatus = null) {
     const atr = bestData.atr;
     let sl, tp1, tp2, advice, area;
 
+    const entryFloor = Math.floor(bestData.ema20 || bestData.support);
+    const entryCeiling = entryBase;
+
     if (isSwing) {
-      sl = Math.floor(entryBase - (2.5 * atr));
-      tp1 = Math.floor(entryBase + (5 * atr));
-      tp2 = Math.floor(entryBase + (10 * atr));
+      sl = Math.floor(entryFloor - (1.5 * atr));
+      tp1 = Math.floor(entryCeiling + (5 * atr));
+      tp2 = Math.floor(entryCeiling + (10 * atr));
       advice = bestData.price >= bestData.resistance ? "Buy on Breakout" : "Buy on Weakness";
-      area = `Rp ${Math.floor(bestData.ema20 || bestData.support).toLocaleString('id-ID')} - Rp ${entryBase.toLocaleString('id-ID')}`;
+      area = `Rp ${entryFloor.toLocaleString('id-ID')} - Rp ${entryCeiling.toLocaleString('id-ID')}`;
     } else {
-      sl = Math.floor(entryBase - (1.5 * atr));
+      sl = Math.floor(entryBase - (2 * atr));
       tp1 = Math.floor(entryBase + (2 * atr));
       tp2 = Math.floor(entryBase + (4 * atr));
       advice = "Fast Entry (Momentum)";
@@ -193,9 +196,14 @@ async function formatHybridAnalysis(ticker, technicalData, sentimentData, market
   
   const entryBase = technicalData.price;
   const atr = technicalData.atr;
-  const sl = Math.floor(entryBase - (2.5 * atr));
-  const tp1 = Math.floor(entryBase + (5 * atr));
-  const tp2 = Math.floor(entryBase + (10 * atr));
+  
+  // Perbaikan Logika: SL harus di bawah entry floor (support/ema20)
+  const entryFloor = Math.floor(technicalData.ema20 || technicalData.support);
+  const entryCeiling = entryBase;
+
+  const sl = Math.floor(entryFloor - (1.5 * atr));
+  const tp1 = Math.floor(entryCeiling + (5 * atr));
+  const tp2 = Math.floor(entryCeiling + (10 * atr));
 
   const isBuy = hybridScore >= 70;
   
@@ -216,10 +224,10 @@ async function formatHybridAnalysis(ticker, technicalData, sentimentData, market
 
   let tradingSetup = `📍 **TRADING SETUP:**\n`;
   if (isBuy) {
-    tradingSetup += `├─ Buy Zone: \`Rp ${Math.floor(technicalData.ema20 || technicalData.support).toLocaleString('id-ID')} - ${entryBase.toLocaleString('id-ID')}\` \n` +
-                    `├─ TP 1: \`Rp ${tp1.toLocaleString('id-ID')}\` (+${((tp1-entryBase)/entryBase*100).toFixed(1)}%) 🚀\n` +
-                    `├─ TP 2: \`Rp ${tp2.toLocaleString('id-ID')}\` (+${((tp2-entryBase)/entryBase*100).toFixed(1)}%) 🚀\n` +
-                    `└─ SL: \`Rp ${sl.toLocaleString('id-ID')}\` (-${((entryBase-sl)/entryBase*100).toFixed(1)}%) 🛡️\n\n`;
+    tradingSetup += `├─ Buy Zone: \`Rp ${entryFloor.toLocaleString('id-ID')} - ${entryCeiling.toLocaleString('id-ID')}\` \n` +
+                    `├─ TP 1: \`Rp ${tp1.toLocaleString('id-ID')}\` (+${((tp1-entryCeiling)/entryCeiling*100).toFixed(1)}%) 🚀\n` +
+                    `├─ TP 2: \`Rp ${tp2.toLocaleString('id-ID')}\` (+${((tp2-entryCeiling)/entryCeiling*100).toFixed(1)}%) 🚀\n` +
+                    `└─ SL: \`Rp ${sl.toLocaleString('id-ID')}\` (-${((entryCeiling-sl)/entryCeiling*100).toFixed(1)}%) 🛡️\n\n`;
   } else {
     tradingSetup += `_Belum ada trading plan. Tunggu hingga momentum teknikal & sentimen AI sinkron (Hybrid Score > 70)._\n\n`;
   }
