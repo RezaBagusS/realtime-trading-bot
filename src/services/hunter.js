@@ -15,49 +15,49 @@ import dbService from './database.js';
  * Dijadwalkan setiap jam 15:30 WIB (Market Closing)
  */
 
-async function fetchHunterCandidates() {
+async function fetchHunterCandidates(tier = 'L2') {
   try {
-    const response = await axios.post('https://scanner.tradingview.com/indonesia/scan', {
-      filter: [
-        { left: 'price_earnings_ttm', operation: 'less', right: 40 },
-        { left: 'relative_volume_10d_calc', operation: 'greater', right: 1.2 },
-        { left: 'change', operation: 'greater', right: 1 },
-        { left: 'close', operation: 'greater', right: 200 }, // Minimal Rp 200 menghindari gorengan
+    const filters = {
+      'L1': [ // Bluechip & Konglo (Big Cap)
+        { left: 'market_cap_basic', operation: 'greater', right: 10000000000 }, // MC > 10T (TradingView MC is in units)
+        { left: 'relative_volume_10d_calc', operation: 'greater', right: 0.9 },
+        { left: 'change', operation: 'greater', right: 0.5 },
         { left: 'type', operation: 'equal', right: 'stock' }
       ],
+      'L2': [ // Momentum (Mid-Cap)
+        { left: 'price_earnings_ttm', operation: 'less', right: 40 },
+        { left: 'relative_volume_10d_calc', operation: 'greater', right: 1.2 },
+        { left: 'change', operation: 'greater', right: 1.5 },
+        { left: 'close', operation: 'greater', right: 200 },
+        { left: 'type', operation: 'equal', right: 'stock' }
+      ]
+    };
+
+    const sortBy = tier === 'L1' ? 'market_cap_basic' : 'change';
+
+    const response = await axios.post('https://scanner.tradingview.com/indonesia/scan', {
+      filter: filters[tier],
       options: { lang: 'en' },
       markets: ['indonesia'],
       symbols: { query: { types: [] }, tickers: [] },
-      columns: [
-        'name',
-        'close',
-        'change',
-        'relative_volume_10d_calc',
-        'price_earnings_ttm',
-        'price_52_week_high'
-      ],
-      sort: { sortBy: 'change', sortOrder: 'desc' },
-      range: [0, 30] // Ambil 30 untuk memastikan dapet minimal 3-5 yang bagus
+      columns: ['name', 'close', 'change', 'relative_volume_10d_calc', 'market_cap_basic'],
+      sort: { sortBy: sortBy, sortOrder: 'desc' },
+      range: [0, 50]
     });
 
     if (!response.data || !response.data.data) return [];
 
-    // Map results and filter for proximity to 52W High (> 0.7)
-    return response.data.data
-      .map(item => ({
-        ticker: item.d[0],
-        price: item.d[1],
-        change: item.d[2],
-        relVol: item.d[3],
-        pe: item.d[4],
-        high52: item.d[5],
-        proximity: item.d[1] / item.d[5] // Price / 52W High
-      }))
-      .filter(s => s.proximity >= 0.7)
-      .slice(0, 10); // Ambil 10 kandidat teratas untuk diverifikasi AI
+    return response.data.data.map(item => ({
+      ticker: item.d[0],
+      price: item.d[1],
+      change: item.d[2],
+      relVol: item.d[3],
+      marketCap: item.d[4],
+      tier: tier
+    }));
 
   } catch (err) {
-    logger.error('Hunter: Gagal mengambil data scanner:', err.message);
+    logger.error(`Hunter: Gagal mengambil data scanner ${tier}:`, err.message);
     return [];
   }
 }
@@ -65,79 +65,137 @@ async function fetchHunterCandidates() {
 async function processHunterTicker(candidate, marketStatus) {
   const bot = telegramService.getBot();
   const ticker = candidate.ticker;
+  const tier = candidate.tier;
   try {
-    logger.info(`Hunter: Memproses $${ticker} (Technical Proximity: ${(candidate.proximity * 100).toFixed(1)}%)`);
-
     // 1. Analisa Teknikal Detail
     const technicalData = await tvService.analyze(ticker, config.thresholds.swing);
+    const history = technicalData.rawHistory;
+
+    // --- MULTI-STRATEGY DETECTION ---
+    let strategyType = "";
     
-    // 2. Analisa Berita & AI Sentiment
-    const news = await newsService.getLatestNews(ticker);
-    const sentiment = await aiService.analyzeSentiment(ticker, news);
-
-    // 3. Format Hybrid Report
-    const { report, hybridScore } = await formatter.formatHybridAnalysis(ticker, technicalData, sentiment, marketStatus);
-
-    // Kirim sinyal Hunter (Minimal Hybrid Score 70 agar kualitas terjaga)
-    if (hybridScore >= 70) {
-      await bot.sendMessage(config.telegram.channelId, 
-        `🎯 **ZENITH MARKET HUNTER: AFTER-MARKET PICK**\n` +
-        `_Berdasarkan kriteria Akumulasi & Momentum 52W High_\n\n` +
-        `${report}`, 
-        { 
-          parse_mode: 'Markdown',
-          disable_web_page_preview: true 
-        }
-      );
-      logger.success(`Hunter: Sinyal $${ticker} dikirim ke channel.`);
-      return true;
+    // A. BREAKOUT Check (High 20-Day)
+    const past20Days = history.slice(1, 21);
+    let high20 = 0;
+    if (past20Days.length >= 20) {
+      high20 = Math.max(...past20Days.map(d => d.high || d.close || d.price || 0));
+      if (technicalData.price >= (high20 * 0.995)) {
+        strategyType = "CONSOLIDATION BREAKOUT";
+      }
+    }
+    
+    // B. PULLBACK Check (Buy on Dip)
+    let distToEma20 = 0;
+    if (!strategyType && technicalData.ema20 > technicalData.ema50) {
+      distToEma20 = (technicalData.price - technicalData.ema20) / technicalData.ema20;
+      // L1 lebih longgar (7%), L2 (5%)
+      const tolerance = tier === 'L1' ? 0.07 : 0.05;
+      if (distToEma20 >= -0.005 && distToEma20 <= tolerance) {
+        strategyType = "UPTREND PULLBACK";
+      }
     }
 
-    logger.info(`Hunter: $${ticker} diskip karena Hybrid Score rendah (${hybridScore}).`);
-    return false;
+    // C. REVERSAL Check (MACD Bullish Cross)
+    if (!strategyType) {
+      const macd = formatter.calculateMACD(history);
+      if (macd.crossover) {
+        strategyType = "MOMENTUM REVERSAL";
+      }
+    }
+
+    // LOG EVALUASI DETAIL
+    if (!strategyType) {
+      logger.info(`🔍 EVAL [${tier}]: $${ticker} | Price: ${technicalData.price} | High20: ${high20.toFixed(0)} | Hasil: SKIP`);
+      return { success: true, strategyType: "" };
+    }
+
+    const tScore = formatter.calculateScore(technicalData, marketStatus).total;
+    logger.info(`🔍 EVAL [${tier}]: $${ticker} | Pola: [${strategyType}] | Skor: ${tScore}/100 | Hasil: PROSES`);
+
+    // 2. Format Report (Murni Teknikal)
+    const { report, technicalScore } = await formatter.formatTechnicalAnalysis(ticker, technicalData, marketStatus);
+
+    return {
+      success: true,
+      ticker,
+      tier,
+      strategyType,
+      hybridScore: technicalScore,
+      report
+    };
+
   } catch (err) {
-    logger.error(`Hunter gagal memproses $${ticker}:`, err.message);
-    return false;
+    const isBusy = err.message.includes('sibuk') || err.message.includes('TradingView Error');
+    if (!isBusy) logger.error(`Hunter gagal memproses $${ticker}:`, err.message);
+    return { success: false, isBusy };
   }
 }
 
 async function runHunter() {
   const bot = telegramService.getBot();
-  logger.info('🚀 Zenith Market Hunter: Memulai sesi berburu (15:30 WIB)...');
-  
-  const candidates = await fetchHunterCandidates();
-  
-  if (candidates.length === 0) {
-    logger.info('Hunter: Tidak ada kandidat saham yang memenuhi kriteria hari ini.');
-    return;
-  }
+  logger.info('🚀 Zenith Market Hunter v10: Memulai sesi berburu (L1 & L2)...');
 
-  logger.info(`Hunter: Menemukan ${candidates.length} kandidat potensial. Memulai verifikasi AI...`);
-  
   const marketStatus = await tvService.getMarketStatus();
-  let foundCount = 0;
   
-  for (const candidate of candidates) {
-    // Berhenti jika sudah menemukan 5 (Maksimal)
-    if (foundCount >= 5) break;
+  // 1. AMBIL KANDIDAT L1 & L2
+  const candidatesL1 = await fetchHunterCandidates('L1');
+  const candidatesL2 = await fetchHunterCandidates('L2');
 
-    const success = await processHunterTicker(candidate, marketStatus);
-    if (success) foundCount++;
+  const allCandidates = [...candidatesL1.slice(0, 10), ...candidatesL2.slice(0, 15)];
+  const allResults = [];
+
+  for (const candidate of allCandidates) {
+    let result = { success: false };
+    let retries = 2;
     
-    // Jeda agar tidak terkena rate limit
-    await new Promise(r => setTimeout(r, 3000));
+    while (retries > 0 && !result.success) {
+      result = await processHunterTicker(candidate, marketStatus);
+      if (!result.success && result.isBusy) {
+        await new Promise(r => setTimeout(r, 4000));
+        retries--;
+      } else {
+        break;
+      }
+    }
+
+    if (result.success && result.strategyType) {
+      allResults.push(result);
+    }
+    await new Promise(r => setTimeout(r, 1500));
   }
 
-  if (foundCount === 0) {
-    await bot.sendMessage(config.telegram.channelId, 
-      `🎯 **ZENITH MARKET HUNTER (15:30 WIB)**\n\n` +
-      `Sesi berburu hari ini telah selesai. Namun, **belum ada saham di luar radar yang memenuhi kriteria ketat** (Inflow & Momentum 52W High).\n\n` +
-      `💡 _Tetap pantau bursa, peluang terbaik seringkali datang saat pasar sedang sepi._`,
+  // --- SELEKSI & PENGIRIMAN ---
+  // Kita pastikan minimal ada 1 dari L1 dan sisanya L2
+  const sortedSignals = allResults
+    .filter(r => r.hybridScore >= 60)
+    .sort((a, b) => b.hybridScore - a.hybridScore);
+
+  const finalSignals = sortedSignals.slice(0, 5);
+
+  if (finalSignals.length === 0) {
+    await bot.sendMessage(config.telegram.channelId,
+      `🎯 **ZENITH MARKET HUNTER (L1 & L2)**\n\n` +
+      `Sesi berburu selesai. Belum ada saham yang memenuhi standar teknikal minimal hari ini.\n\n` +
+      `💡 _Tetap pantau bursa, bank-bank besar biasanya bergerak saat IHSG mulai stabil._`,
       { parse_mode: 'Markdown' }
     );
-    logger.info('Hunter: Tidak ada saham layak buru ditemukan.');
   } else {
-    logger.success(`Hunter: Sesi selesai. ${foundCount} saham "buruan" dikirim ke channel.`);
+    for (const signal of finalSignals) {
+      const tierLabel = signal.tier === 'L1' ? "🏦 [L1 BLUECHIP/KONGLO]" : "🚀 [L2 MOMENTUM]";
+      const riskLabel = signal.hybridScore >= 75 ? "💎 PREMIUM" : "⚠️ MODERATE";
+      
+      await bot.sendMessage(config.telegram.channelId, 
+        `🎯 **ZENITH HUNTER: ${tierLabel}**\n` +
+        `🔥 *Pattern:* ${signal.strategyType}\n` +
+        `🏆 *Score:* ${signal.hybridScore}/100 (${riskLabel})\n\n` +
+        `${signal.report}`, 
+        { 
+          parse_mode: 'Markdown',
+          disable_web_page_preview: true 
+        }
+      );
+    }
+    logger.success(`Hunter: Sesi selesai. ${finalSignals.length} saham buruan (L1/L2) dikirim.`);
   }
 }
 

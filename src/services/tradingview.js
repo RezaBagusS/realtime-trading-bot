@@ -128,28 +128,38 @@ async function getHistory(ticker, timeframe = 'D', range = 350) {
   return new Promise(async (resolve, reject) => {
     const symbol = ticker.toUpperCase() === 'COMPOSITE' ? 'IDX:COMPOSITE' : `IDX:${ticker.toUpperCase()}`;
     const tvClient = getClient();
-    const chart = new tvClient.Session.Chart();
+    let chart;
     
-    // Tambahkan OnError agar tidak stuck saat simbol salah
-    chart.onError((err) => {
-      chart.delete();
-      reject(new Error(`TradingView Error: ${err}`));
-    });
-
-    chart.setMarket(symbol, { timeframe, range });
-    
-    chart.onUpdate(() => {
-      if (chart.periods.length >= range - 10) {
-        const data = [...chart.periods].reverse(); 
-        chart.delete();
-        resolve(data);
-      }
-    });
-
-    setTimeout(() => {
-      chart.delete();
+    const timeout = setTimeout(() => {
+      if (chart) chart.delete();
       reject(new Error(`Timeout: Data $${ticker} tidak merespon. Pastikan ticker benar.`));
-    }, 25000); // Naikkan ke 25 detik
+    }, 30000); // 30 detik
+
+    try {
+      chart = new tvClient.Session.Chart();
+      
+      chart.onError((err) => {
+        clearTimeout(timeout);
+        chart.delete();
+        reject(new Error(`TradingView Error: ${err}`));
+      });
+
+      chart.setMarket(symbol, { timeframe, range });
+      
+      chart.onUpdate(() => {
+        // Cek jika data sudah mencukupi (beri toleransi jika history emiten baru pendek)
+        if (chart.periods.length >= 10) {
+          const data = [...chart.periods].reverse(); 
+          clearTimeout(timeout);
+          chart.delete();
+          resolve(data);
+        }
+      });
+    } catch (err) {
+      clearTimeout(timeout);
+      if (chart) chart.delete();
+      reject(err);
+    }
   });
 }
 

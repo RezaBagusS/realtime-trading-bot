@@ -271,9 +271,51 @@ async function formatHybridAnalysis(ticker, technicalData, sentimentData, market
          `━━━━━━━━━━━━━━━\n` +
          `📈 *Win-rate Real: ${winrateDisplay}*\n` +
          `*Zenith AI Engine v4.5: Integrity & Intelligence.*`;
-
   return { report, hybridScore };
 }
 
-export { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis };
-export default { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis };
+async function formatTechnicalAnalysis(ticker, data, marketStatus = null, userSettings = null) {
+  const tScore = calculateScore(data, marketStatus).total;
+  let category = getCategory(tScore);
+  
+  const tBar = '🟩'.repeat(Math.round(tScore / 10)) + '⬜'.repeat(10 - Math.round(tScore / 10));
+  const entryBase = data.price;
+  const atr = data.atr;
+  
+  const entryFloor = Math.floor(data.ema20 || data.support);
+  const entryCeiling = entryBase;
+
+  const sl = Math.floor(entryFloor - (1.5 * atr));
+  const tp1 = Math.floor(entryCeiling + (5 * atr));
+  const tp2 = Math.floor(entryCeiling + (10 * atr));
+
+  const stats = await dbService.getWinrateStats();
+  const winrateDisplay = stats.winrate ? `${stats.winrate}%` : 'Data Pending';
+
+  const report = `📊 **ANALISA TEKNIKAL: $${ticker.toUpperCase()}**\n` +
+         `${category.color} **STATUS: ${category.label}**\n\n` +
+         `━━━━━━━━━━━━━━━\n` +
+         `🏆 **TECHNICAL SCORE: ${tScore}/100**\n` +
+         `💰 **Harga Saat Ini: Rp ${entryBase.toLocaleString('id-ID')}**\n` +
+         `\`${tBar}\` \n\n` +
+         `📈 **DATA PASAR:**\n` +
+         `• Trend: ${data.ema20 > data.ema50 ? 'Bullish 🚀' : 'Bearish 📉'}\n` +
+         `• Momentum: ${data.price > data.ema20 ? 'Strong' : 'Stable'}\n` +
+         `• Volatilitas (ATR): Rp ${atr.toFixed(0)}\n\n` +
+         `📍 **TRADING SETUP:**\n` +
+         `├─ Buy Zone: \`Rp ${entryFloor.toLocaleString('id-ID')} - ${entryCeiling.toLocaleString('id-ID')}\` \n` +
+         `├─ TP 1: \`Rp ${tp1.toLocaleString('id-ID')}\` (+${((tp1-entryCeiling)/entryCeiling*100).toFixed(1)}%) 🚀\n` +
+         `├─ TP 2: \`Rp ${tp2.toLocaleString('id-ID')}\` (+${((tp2-entryCeiling)/entryCeiling*100).toFixed(1)}%) 🚀\n` +
+         `└─ SL: \`Rp ${sl.toLocaleString('id-ID')}\` (-${((entryCeiling-sl)/entryCeiling*100).toFixed(1)}%) 🛡️\n\n` +
+         `━━━━━━━━━━━━━━━\n` +
+         `📈 *Win-rate System: ${winrateDisplay}*\n` +
+         `*Zenith Pure Technical Engine v9.0*`;
+
+  return { report, technicalScore: tScore };
+}
+
+const calculateMACD = (history) => indicators.calculateMACD(history);
+const calculateStochRSI = (history) => indicators.calculateStochRSI(history);
+
+export { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis, formatTechnicalAnalysis, calculateMACD, calculateStochRSI };
+export default { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis, formatTechnicalAnalysis, calculateMACD, calculateStochRSI };
