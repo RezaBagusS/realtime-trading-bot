@@ -8,7 +8,20 @@ import * as newsService from './news.js';
 import * as aiService from './ai.js';
 
 let bot;
-const userStates = new Map(); // Untuk melacak status user (Sesuai Permintaan User)
+const userStates = new Map(); 
+
+// Fungsi Pembantu: Cek Jam Bursa (Senin-Jumat, 09:00 - 16:00 WIB)
+function isMarketOpen() {
+  const now = new Date();
+  const jktTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+  const day = jktTime.getDay(); // 0: Minggu, 6: Sabtu
+  const hour = jktTime.getHours();
+  
+  const isWeekday = day >= 1 && day <= 5;
+  const isBusinessHour = hour >= 9 && hour < 16;
+  
+  return isWeekday && isBusinessHour;
+}
 
 async function handleDualCek(msg, ticker) {
   const loading = await bot.sendMessage(msg.chat.id, `🔍 Menganalisa *$${ticker}* (1H & Daily)...`, { parse_mode: 'Markdown' });
@@ -27,6 +40,9 @@ async function handleDualCek(msg, ticker) {
       message_id: loading.message_id,
       parse_mode: 'Markdown'
     });
+
+    // Munculkan menu navigasi setelah selesai
+    sendNavigationMenu(msg.chat.id);
   } catch (err) {
     let errorMessage = err.message;
     let isSymbolError = false;
@@ -53,6 +69,34 @@ async function handleDualCek(msg, ticker) {
       });
     });
   }
+}
+
+async function sendNavigationMenu(chatId, text = "💡 **Apa langkah Anda selanjutnya?**") {
+  const menu = {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: '🧬 Analisa Hybrid', callback_data: 'ask_analysis' },
+          { text: '📊 Teknikal', callback_data: 'ask_technical' }
+        ],
+        [
+          { text: '📰 Berita AI', callback_data: 'ask_news' },
+          { text: '📡 Radar Status', callback_data: 'nextscan' }
+        ],
+        [
+          { text: '📋 Watchlist', callback_data: 'list_watchlist' },
+          { text: '➕ Tambah', callback_data: 'ask_add' },
+          { text: '➖ Hapus', callback_data: 'ask_del' }
+        ],
+        [
+          { text: '💰 Atur Modal', callback_data: 'ask_setbalance' },
+          { text: '❓ Panduan', callback_data: 'help' }
+        ]
+      ]
+    },
+    parse_mode: 'Markdown'
+  };
+  return bot.sendMessage(chatId, text, menu);
 }
 
 function init(options = { polling: true }) {
@@ -104,11 +148,14 @@ function init(options = { polling: true }) {
           return bot.processUpdate({ message: { ...msg, text: `/add ${input}` } });
         } else if (state.action === 'del') {
           return bot.processUpdate({ message: { ...msg, text: `/del ${input}` } });
+        } else if (state.action === 'setbalance') {
+          return bot.processUpdate({ message: { ...msg, text: `/setbalance ${input}` } });
         }
+        return; // Pastikan berhenti di sini
       }
 
-      // 2. Catch-all: Jika bukan perintah dan bukan dalam mode state
-      if (!msg.text.startsWith('/') && !msg.text.startsWith('@')) {
+      // 2. Catch-all: Jika bukan perintah dan BUKAN balasan dari force_reply
+      if (!msg.text.startsWith('/') && !msg.text.startsWith('@') && !msg.reply_to_message) {
         const fallbackMsg = `⚠️ **Perintah tidak dikenali.**\n\n` +
                             `Saya tidak mengerti pesan: "_${msg.text}_"\n\n` +
                             `💡 **Tips:** Gunakan menu tombol di pojok kiri bawah atau ketik \`/help\` untuk melihat daftar perintah yang tersedia.`;
@@ -119,6 +166,7 @@ function init(options = { polling: true }) {
     bot.onText(/\/technical(?:\s+([A-Za-z0-9]+))?$/i, (msg, match) => {
       const ticker = match[1];
       if (!ticker) {
+        userStates.set(msg.chat.id, { action: 'technical' });
         return bot.sendMessage(msg.chat.id, `📊 **Analisa Teknikal**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dicek (Contoh: \`PTRO\`).`, { 
           parse_mode: 'Markdown',
           reply_markup: { force_reply: true, selective: true }
@@ -131,6 +179,7 @@ function init(options = { polling: true }) {
       const ticker = match[1]?.toUpperCase();
       
       if (!ticker) {
+        userStates.set(msg.chat.id, { action: 'analysis' });
         return bot.sendMessage(msg.chat.id, `🧬 **Analisa Hybrid (AI)**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dianalisa (Contoh: \`BBCA\`).`, { 
           parse_mode: 'Markdown',
           reply_markup: { force_reply: true, selective: true }
@@ -162,7 +211,7 @@ function init(options = { polling: true }) {
 
         // 1. Simpan Sinyal ke History jika Skor >= 70
         if (hybridScore >= 70) {
-          await dbService.saveSignal(ticker, technicalData.price, 'SWING', hybridScore);
+          await dbService.saveSignal(ticker, technicalResults.price, 'SWING', hybridScore);
         }
         
         await bot.editMessageText(report, {
@@ -171,6 +220,8 @@ function init(options = { polling: true }) {
           parse_mode: 'Markdown',
           disable_web_page_preview: true
         });
+
+        sendNavigationMenu(msg.chat.id);
       } catch (err) {
         let errorMsg = `❌ *Gagal Memproses Analysis*\n\nDetail: \`${err.message.replace(/[_*`\[\]]/g, '\\$&')}\``;
         if (err.message.includes('Symbol error') || err.message.includes('ser_1')) {
@@ -189,6 +240,7 @@ function init(options = { polling: true }) {
       const ticker = match[1]?.toUpperCase();
       
       if (!ticker) {
+        userStates.set(msg.chat.id, { action: 'news' });
         return bot.sendMessage(msg.chat.id, `📰 **Cek Berita & Sentimen**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dicari beritanya.`, { 
           parse_mode: 'Markdown',
           reply_markup: { force_reply: true, selective: true }
@@ -211,6 +263,8 @@ function init(options = { polling: true }) {
           parse_mode: 'Markdown',
           disable_web_page_preview: true
         });
+
+        sendNavigationMenu(msg.chat.id);
       } catch (err) {
         const safeError = err.message.replace(/[_*`\[\]]/g, '\\$&');
         bot.editMessageText(
@@ -246,6 +300,7 @@ function init(options = { polling: true }) {
           message_id: status.message_id,
           parse_mode: 'Markdown'
         });
+        sendNavigationMenu(msg.chat.id);
       } catch (err) {
         let errorReason;
         if (err.message.includes('Symbol error') || err.message.includes('ser_1')) {
@@ -271,7 +326,8 @@ function init(options = { polling: true }) {
       try {
         const changes = await dbService.deleteTicker(ticker);
         if (changes > 0) {
-          bot.sendMessage(msg.chat.id, `🗑️ **$${ticker}** dihapus dari radar screener.`, { parse_mode: 'Markdown' });
+          await bot.sendMessage(msg.chat.id, `🗑️ **$${ticker}** dihapus dari radar screener.`, { parse_mode: 'Markdown' });
+          sendNavigationMenu(msg.chat.id);
         } else {
           bot.sendMessage(msg.chat.id, `⚠️ Ticker tidak ditemukan di watchlist.`);
         }
@@ -284,10 +340,11 @@ function init(options = { polling: true }) {
       try {
         const list = await dbService.getWatchlist();
         if (list.length > 0) {
-          bot.sendMessage(msg.chat.id, `📋 **Radar Watchlist Saat Ini:**\n\n${list.map(t => `• $${t}`).join('\n')}`, { parse_mode: 'Markdown' });
+          await bot.sendMessage(msg.chat.id, `📋 **Radar Watchlist Saat Ini:**\n\n${list.map(t => `• $${t}`).join('\n')}`, { parse_mode: 'Markdown' });
         } else {
-          bot.sendMessage(msg.chat.id, `📭 Watchlist kosong. Gunakan \`/add [TICKER]\` untuk menambah.`);
+          await bot.sendMessage(msg.chat.id, `📭 Watchlist kosong. Gunakan \`/add [TICKER]\` untuk menambah.`);
         }
+        sendNavigationMenu(msg.chat.id);
       } catch (err) {
         bot.sendMessage(msg.chat.id, `❌ Gagal mengambil watchlist.`);
       }
@@ -298,20 +355,34 @@ function init(options = { polling: true }) {
       const currentMinutes = now.getMinutes();
       const minutesLeft = 60 - currentMinutes;
       
+      let statusPasar = isMarketOpen() ? "🟢 **Sedang Berjalan**" : "🔴 **Sedang Tutup**";
+      
       const nextMsg = `⏳ **Informasi Radar**\n\n` +
+                      `Status Pasar: ${statusPasar}\n` +
                       `Screener otomatis berjalan setiap awal jam.\n` +
                       `• **Scan Terakhir:** ${now.getHours()}:00 WIB\n` +
-                      `• **Scan Berikutnya:** dalam **${minutesLeft} menit** (sekitar jam ${now.getHours() + 1}:00 WIB).\n\n` +
+                      `• **Scan Berikutnya:** ${isMarketOpen() ? `dalam **${minutesLeft} menit**` : "Menunggu Market Open"} (jam 09:00 WIB).\n\n` +
                       `💡 _Bot hanya men-scan saham yang ada di dalam \`/list\` Anda._`;
       
       bot.sendMessage(msg.chat.id, nextMsg, { parse_mode: 'Markdown' });
     });
 
     bot.onText(/\/setbalance(?:\s+([0-9]+))?$/i, async (msg, match) => {
-      const balance = parseFloat(match[1]);
+      const balanceInput = match[1];
+      
+      if (!balanceInput) {
+        userStates.set(msg.chat.id, { action: 'setbalance' });
+        return bot.sendMessage(msg.chat.id, `💰 **Atur Modal Trading**\n\nSilakan balas pesan ini dengan **Jumlah Modal** Anda (Hanya angka, contoh: \`10000000\`).`, { 
+          parse_mode: 'Markdown',
+          reply_markup: { force_reply: true, selective: true }
+        });
+      }
+
+      const balance = parseFloat(balanceInput);
       try {
         await dbService.setUserBalance(msg.chat.id, balance);
-        bot.sendMessage(msg.chat.id, `💰 **Modal Berhasil Diatur:** Rp ${balance.toLocaleString('id-ID')}\n\n_Bot sekarang akan menghitung rekomendasi lot otomatis untuk Anda._`, { parse_mode: 'Markdown' });
+        await bot.sendMessage(msg.chat.id, `💰 **Modal Berhasil Diatur:** Rp ${balance.toLocaleString('id-ID')}\n\n_Bot sekarang akan menghitung rekomendasi lot otomatis untuk Anda._`, { parse_mode: 'Markdown' });
+        sendNavigationMenu(msg.chat.id);
       } catch (err) {
         bot.sendMessage(msg.chat.id, `❌ Gagal mengatur modal.`);
       }
@@ -361,7 +432,16 @@ function init(options = { polling: true }) {
       if (query.data === 'nextscan') {
         const now = new Date();
         const minutesLeft = 60 - now.getMinutes();
-        return bot.sendMessage(chatId, `⏳ **Scan Berikutnya:** dalam **${minutesLeft} menit**.`);
+        const status = isMarketOpen() ? `dalam **${minutesLeft} menit**` : "Market Tutup (Buka jam 09:00 WIB)";
+        return bot.sendMessage(chatId, `⏳ **Scan Berikutnya:** ${status}.`);
+      }
+
+      if (query.data === 'list_watchlist') {
+        return bot.processUpdate({ message: { ...query.message, text: '/list' } });
+      }
+      
+      if (query.data === 'help') {
+        return bot.processUpdate({ message: { ...query.message, text: '/help' } });
       }
 
       const actions = {
@@ -369,7 +449,8 @@ function init(options = { polling: true }) {
         'ask_technical': { action: 'technical', text: '📊 **Analisa Teknikal**\n\nSilakan balas pesan ini dengan **Kode Saham** (Contoh: `PTRO`).' },
         'ask_news': { action: 'news', text: '📰 **Berita & Sentimen**\n\nSilakan balas pesan ini dengan **Kode Saham**.' },
         'ask_add': { action: 'add', text: '➕ **Tambah Radar**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dipantau.' },
-        'ask_del': { action: 'del', text: '➖ **Hapus Radar**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dihapus.' }
+        'ask_del': { action: 'del', text: '➖ **Hapus Radar**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dihapus.' },
+        'ask_setbalance': { action: 'setbalance', text: '💰 **Atur Modal**\n\nSilakan balas pesan ini dengan **Jumlah Modal** (Hanya angka, contoh: `10000000`).' }
       };
 
       if (actions[query.data]) {
