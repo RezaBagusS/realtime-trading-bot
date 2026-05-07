@@ -76,17 +76,21 @@ async function sendNavigationMenu(chatId, text = "💡 **Apa langkah Anda selanj
     reply_markup: {
       inline_keyboard: [
         [
+          { text: '🎯 Hunter Scan', callback_data: 'run_hunter' },
+          { text: '📡 Radar Status', callback_data: 'nextscan' }
+        ],
+        [
           { text: '🧬 Analisa Hybrid', callback_data: 'ask_analysis' },
           { text: '📊 Teknikal', callback_data: 'ask_technical' }
         ],
         [
           { text: '📰 Berita AI', callback_data: 'ask_news' },
-          { text: '📡 Radar Status', callback_data: 'nextscan' }
+          { text: '📋 Watchlist', callback_data: 'list_watchlist' }
         ],
         [
-          { text: '📋 Watchlist', callback_data: 'list_watchlist' },
           { text: '➕ Tambah', callback_data: 'ask_add' },
-          { text: '➖ Hapus', callback_data: 'ask_del' }
+          { text: '➖ Hapus', callback_data: 'ask_del' },
+          { text: '🛡️ Advice', callback_data: 'ask_advice' }
         ],
         [
           { text: '💰 Atur Modal', callback_data: 'ask_setbalance' },
@@ -105,6 +109,8 @@ function init(options = { polling: true }) {
     
     // Konfigurasi Command Menu (Sesuai Permintaan User)
     bot.setMyCommands([
+      { command: 'hunter', description: 'Jalankan Sesi Berburu (L1 & L2) Manual' },
+      { command: 'advice', description: 'Advice Posisi: TP, SL & Risk Management' },
       { command: 'analysis', description: 'Analisa Hybrid (Teknikal + AI Sentiment)' },
       { command: 'technical', description: 'Analisa Teknikal Murni (Scalp & Swing)' },
       { command: 'news', description: 'Berita Terbaru & Sentimen AI' },
@@ -150,8 +156,17 @@ function init(options = { polling: true }) {
           return bot.processUpdate({ message: { ...msg, text: `/del ${input}` } });
         } else if (state.action === 'setbalance') {
           return bot.processUpdate({ message: { ...msg, text: `/setbalance ${input}` } });
+        } else if (state.action === 'advice_ticker') {
+          userStates.set(chatId, { action: 'advice_price', ticker: input });
+          return bot.sendMessage(chatId, `💰 **Berapa Harga Rata-rata (Avg Price) $${input}?**\n\n_Contoh: 8500_`, { reply_markup: { force_reply: true } });
+        } else if (state.action === 'advice_price') {
+          userStates.set(chatId, { ...state, action: 'advice_lots', price: input });
+          return bot.sendMessage(chatId, `📦 **Berapa Jumlah Lot $${state.ticker}?**\n\n_Contoh: 10_`, { reply_markup: { force_reply: true } });
+        } else if (state.action === 'advice_lots') {
+          userStates.delete(chatId);
+          return bot.processUpdate({ message: { ...msg, text: `/advice ${state.ticker} ${state.price} ${input}` } });
         }
-        return; // Pastikan berhenti di sini
+        return; 
       }
 
       // 2. Catch-all: Jika bukan perintah dan BUKAN balasan dari force_reply
@@ -161,6 +176,13 @@ function init(options = { polling: true }) {
                             `💡 **Tips:** Gunakan menu tombol di pojok kiri bawah atau ketik \`/help\` untuk melihat daftar perintah yang tersedia.`;
         bot.sendMessage(chatId, fallbackMsg, { parse_mode: 'Markdown' });
       }
+    });
+
+    bot.onText(/\/hunter/i, async (msg) => {
+      // Import dynamic untuk menghindari circular dependency
+      const { runHunter } = await import('./hunter.js');
+      await bot.sendMessage(msg.chat.id, `🚀 **Zenith Market Hunter Dimulai...**\n\n_Sedang memindai L1 (Bluechip) & L2 (Momentum). Sinyal akan dikirim ke channel jika ditemukan._`, { parse_mode: 'Markdown' });
+      runHunter(msg.chat.id);
     });
 
     bot.onText(/\/technical(?:\s+([A-Za-z0-9]+))?$/i, (msg, match) => {
@@ -367,6 +389,36 @@ function init(options = { polling: true }) {
       bot.sendMessage(msg.chat.id, nextMsg, { parse_mode: 'Markdown' });
     });
 
+    bot.onText(/\/advice(?:\s+([A-Za-z0-9]+)\s+([0-9.]+)\s+([0-9]+))?$/i, async (msg, match) => {
+      const ticker = match[1]?.toUpperCase();
+      const avgPrice = parseFloat(match[2]);
+      const lots = parseInt(match[3]);
+
+      if (!ticker || isNaN(avgPrice) || isNaN(lots)) {
+        userStates.set(msg.chat.id, { action: 'advice_ticker' });
+        return bot.sendMessage(msg.chat.id, `🛡️ **Trading Advice (Position Manager)**\n\nSilakan balas pesan ini dengan **Kode Saham** Anda (Contoh: \`BBCA\`).`, { 
+          parse_mode: 'Markdown',
+          reply_markup: { force_reply: true, selective: true }
+        });
+      }
+
+      const loading = await bot.sendMessage(msg.chat.id, `🔍 Menganalisa *$${ticker}* untuk posisi Anda...`, { parse_mode: 'Markdown' });
+      
+      try {
+        const technical = await tvService.analyze(ticker, config.thresholds.swing);
+        const report = formatter.formatAdvice(ticker, technical, avgPrice, lots);
+        
+        await bot.editMessageText(report, {
+          chat_id: msg.chat.id,
+          message_id: loading.message_id,
+          parse_mode: 'Markdown'
+        });
+        sendNavigationMenu(msg.chat.id);
+      } catch (err) {
+        bot.editMessageText(`❌ Gagal: ${err.message}`, { chat_id: msg.chat.id, message_id: loading.message_id });
+      }
+    });
+
     bot.onText(/\/setbalance(?:\s+([0-9]+))?$/i, async (msg, match) => {
       const balanceInput = match[1];
       
@@ -436,6 +488,10 @@ function init(options = { polling: true }) {
         return bot.sendMessage(chatId, `⏳ **Scan Berikutnya:** ${status}.`);
       }
 
+      if (query.data === 'run_hunter') {
+        return bot.processUpdate({ message: { ...query.message, text: '/hunter' } });
+      }
+
       if (query.data === 'list_watchlist') {
         return bot.processUpdate({ message: { ...query.message, text: '/list' } });
       }
@@ -450,7 +506,8 @@ function init(options = { polling: true }) {
         'ask_news': { action: 'news', text: '📰 **Berita & Sentimen**\n\nSilakan balas pesan ini dengan **Kode Saham**.' },
         'ask_add': { action: 'add', text: '➕ **Tambah Radar**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dipantau.' },
         'ask_del': { action: 'del', text: '➖ **Hapus Radar**\n\nSilakan balas pesan ini dengan **Kode Saham** yang ingin dihapus.' },
-        'ask_setbalance': { action: 'setbalance', text: '💰 **Atur Modal**\n\nSilakan balas pesan ini dengan **Jumlah Modal** (Hanya angka, contoh: `10000000`).' }
+        'ask_setbalance': { action: 'setbalance', text: '💰 **Atur Modal**\n\nSilakan balas pesan ini dengan **Jumlah Modal** (Hanya angka, contoh: `10000000`).' },
+        'ask_advice': { action: 'advice_ticker', text: '🛡️ **Trading Advice**\n\nSilakan balas pesan ini dengan **Kode Saham** Anda (Contoh: `BBCA`).' }
       };
 
       if (actions[query.data]) {

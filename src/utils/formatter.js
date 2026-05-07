@@ -314,8 +314,60 @@ async function formatTechnicalAnalysis(ticker, data, marketStatus = null, userSe
   return { report, technicalScore: tScore };
 }
 
+function formatAdvice(ticker, technical, avgPrice, lots) {
+  const { price, support, resistance, atr, ema20, ema50 } = technical;
+  
+  // Hitung Level (Konservatif)
+  const sl = support > 0 ? Math.min(support * 0.985, price - (atr * 2)) : price - (atr * 2.5);
+  const tp1 = price + (atr * 1.5);
+  const tp2 = resistance > price ? resistance : price + (atr * 3);
+
+  // Kalkulasi Risiko (Lot)
+  const riskPerShare = avgPrice - sl;
+  const riskTotal = riskPerShare * lots * 100;
+  const riskPercent = (riskPerShare / avgPrice) * 100;
+  
+  // Status Posisi Saat Ini
+  const floating = ((price - avgPrice) / avgPrice * 100).toFixed(2);
+  const statusEmoji = floating >= 0 ? "🟢 PROFIT" : "🔴 LOSS";
+
+  // Persentase TP & SL terhadap Harga Saat Ini
+  const tp1Pct = ((tp1 - price) / price * 100).toFixed(1);
+  const tp2Pct = ((tp2 - price) / price * 100).toFixed(1);
+  const slPct = ((price - sl) / price * 100).toFixed(1);
+
+  // Peringatan Risiko
+  let riskWarning = "";
+  if (riskPercent > 10) {
+    riskWarning = `⚠️ **RISIKO SANGAT TINGGI (>10%)**\n_Stop Loss Anda terlalu jauh dari harga modal._\n\n`;
+  }
+
+  return `🏦 **ZENITH ADVICE: $${ticker.toUpperCase()}**\n` +
+         `━━━━━━━━━━━━━━━━━━━━\n` +
+         `💰 **Status Portofolio:**\n` +
+         `• Avg Price: Rp ${avgPrice.toLocaleString('id-ID')}\n` +
+         `• **Price Now: Rp ${price.toLocaleString('id-ID')}**\n` +
+         `• Total Lot: ${lots} Lot\n` +
+         `• Status: ${statusEmoji} (${floating}%)\n\n` +
+         `🎯 **Target & Proteksi:**\n` +
+         `• **TP 1:** Rp ${Math.round(tp1).toLocaleString('id-ID')} (+${tp1Pct}%)\n` +
+         `• **TP 2:** Rp ${Math.round(tp2).toLocaleString('id-ID')} (+${tp2Pct}%)\n` +
+         `• **Stop Loss:** Rp ${Math.round(sl).toLocaleString('id-ID')} (-${slPct}%)\n\n` +
+         `🛡️ **Manajemen Risiko:**\n` +
+         `${riskWarning}` +
+         `• Potensi Risiko: Rp ${Math.round(riskTotal).toLocaleString('id-ID')}\n` +
+         `• Besaran Risiko: ${riskPercent.toFixed(2)}%\n\n` +
+         `🧐 **Komentar Teknikal:**\n` +
+         `• Support terdekat di ${Math.round(support)}.\n` +
+         `• Volatilitas (ATR): Rp ${Math.round(atr)}.\n\n` +
+         `🛠️ **Advice Exit Strategi:**\n` +
+         `• **Resiko Terdekat:** Gunakan SL di Rp ${Math.round(support * 0.99)} (Base Support).\n` +
+         `• **Resiko Ideal:** Gunakan SL di Rp ${Math.round(price - (atr * 2))} (Base Volatilitas).\n\n` +
+         `💡 _Saran: Jika besaran risiko > 10%, pertimbangkan untuk 'Sell on Strength' saat harga mendekati TP1._`;
+}
+
 const calculateMACD = (history) => indicators.calculateMACD(history);
 const calculateStochRSI = (history) => indicators.calculateStochRSI(history);
 
-export { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis, formatTechnicalAnalysis, calculateMACD, calculateStochRSI };
-export default { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis, formatTechnicalAnalysis, calculateMACD, calculateStochRSI };
+export { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis, formatTechnicalAnalysis, formatAdvice, calculateMACD, calculateStochRSI };
+export default { calculateScore, getCategory, formatDualAnalysis, formatNews, formatHybridAnalysis, formatTechnicalAnalysis, formatAdvice, calculateMACD, calculateStochRSI };

@@ -126,19 +126,23 @@ async function analyze(ticker, strategy) {
 
 async function getHistory(ticker, timeframe = 'D', range = 350) {
   return new Promise(async (resolve, reject) => {
-    const symbol = ticker.toUpperCase() === 'COMPOSITE' ? 'IDX:COMPOSITE' : `IDX:${ticker.toUpperCase()}`;
+    // Gunakan IDX:COMPOSITE untuk IHSG, atau IDX: untuk saham
+    let symbol = ticker.toUpperCase() === 'COMPOSITE' ? 'IDX:COMPOSITE' : `IDX:${ticker.toUpperCase()}`;
     const tvClient = getClient();
     let chart;
+    let pollInterval;
     
     const timeout = setTimeout(() => {
+      if (pollInterval) clearInterval(pollInterval);
       if (chart) chart.delete();
       reject(new Error(`Timeout: Data $${ticker} tidak merespon. Pastikan ticker benar.`));
-    }, 30000); // 30 detik
+    }, 35000); // 35 detik
 
     try {
       chart = new tvClient.Session.Chart();
       
       chart.onError((err) => {
+        if (pollInterval) clearInterval(pollInterval);
         clearTimeout(timeout);
         chart.delete();
         reject(new Error(`TradingView Error: ${err}`));
@@ -146,16 +150,29 @@ async function getHistory(ticker, timeframe = 'D', range = 350) {
 
       chart.setMarket(symbol, { timeframe, range });
       
-      chart.onUpdate(() => {
-        // Cek jika data sudah mencukupi (beri toleransi jika history emiten baru pendek)
+      // Smart Polling: Cek buffer data setiap 2 detik 
+      // (Lebih stabil untuk Indeks daripada onUpdate)
+      pollInterval = setInterval(() => {
         if (chart.periods.length >= 10) {
           const data = [...chart.periods].reverse(); 
+          clearInterval(pollInterval);
+          clearTimeout(timeout);
+          chart.delete();
+          resolve(data);
+        }
+      }, 2000);
+
+      chart.onUpdate(() => {
+        if (chart.periods.length >= 20) {
+          const data = [...chart.periods].reverse(); 
+          if (pollInterval) clearInterval(pollInterval);
           clearTimeout(timeout);
           chart.delete();
           resolve(data);
         }
       });
     } catch (err) {
+      if (pollInterval) clearInterval(pollInterval);
       clearTimeout(timeout);
       if (chart) chart.delete();
       reject(err);

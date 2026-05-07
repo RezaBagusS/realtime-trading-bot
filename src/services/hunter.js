@@ -131,72 +131,108 @@ async function processHunterTicker(candidate, marketStatus) {
   }
 }
 
-async function runHunter() {
+async function runHunter(manualChatId = null) {
   const bot = telegramService.getBot();
   logger.info('🚀 Zenith Market Hunter v10: Memulai sesi berburu (L1 & L2)...');
-
-  const marketStatus = await tvService.getMarketStatus();
   
-  // 1. AMBIL KANDIDAT L1 & L2
-  const candidatesL1 = await fetchHunterCandidates('L1');
-  const candidatesL2 = await fetchHunterCandidates('L2');
-
-  const allCandidates = [...candidatesL1.slice(0, 10), ...candidatesL2.slice(0, 15)];
-  const allResults = [];
-
-  for (const candidate of allCandidates) {
-    let result = { success: false };
-    let retries = 2;
+  try {
+    const marketStatus = await tvService.getMarketStatus();
     
-    while (retries > 0 && !result.success) {
-      result = await processHunterTicker(candidate, marketStatus);
-      if (!result.success && result.isBusy) {
-        await new Promise(r => setTimeout(r, 4000));
-        retries--;
-      } else {
-        break;
+    // 1. Fetch Candidates (L1 & L2)
+    const [l1Candidates, l2Candidates] = await Promise.all([
+      fetchHunterCandidates('L1'),
+      fetchHunterCandidates('L2')
+    ]);
+
+    const allResults = [];
+
+    // 2. Process Tiers
+    logger.info(`Memproses ${l1Candidates.length} L1 & ${l2Candidates.length} L2 candidates...`);
+    
+    // Process L1
+    for (const cand of l1Candidates) {
+      const res = await processHunterWithRetry(cand, marketStatus);
+      if (res) allResults.push({ ...res, tier: 'L1' });
+    }
+
+    // Process L2
+    for (const cand of l2Candidates) {
+      const res = await processHunterWithRetry(cand, marketStatus);
+      if (res) allResults.push({ ...res, tier: 'L2' });
+    }
+
+    // --- SELEKSI & PENGIRIMAN ---
+    const sortedSignals = allResults
+      .filter(r => r.hybridScore >= 60)
+      .sort((a, b) => b.hybridScore - a.hybridScore);
+
+    const finalSignals = sortedSignals.slice(0, 5);
+
+    if (finalSignals.length === 0) {
+      const noSignalMsg = `🎯 **ZENITH MARKET HUNTER (L1 & L2)**\n\n` +
+                          `Sesi berburu selesai. Belum ada saham yang memenuhi standar teknikal minimal hari ini.\n\n` +
+                          `💡 _Tetap pantau bursa, bank-bank besar biasanya bergerak saat IHSG mulai stabil._`;
+      
+      await bot.sendMessage(config.telegram.channelId, noSignalMsg, { parse_mode: 'Markdown' });
+      
+      if (manualChatId) {
+        const { sendNavigationMenu } = await import('./telegram.js');
+        await bot.sendMessage(manualChatId, noSignalMsg, { parse_mode: 'Markdown' });
+        sendNavigationMenu(manualChatId);
+      }
+    } else {
+      for (const signal of finalSignals) {
+        const tierLabel = signal.tier === 'L1' ? "🏦 [L1 BLUECHIP/KONGLO]" : "🚀 [L2 MOMENTUM]";
+        const riskLabel = signal.hybridScore >= 75 ? "💎 PREMIUM" : "⚠️ MODERATE";
+        
+        await bot.sendMessage(config.telegram.channelId, 
+          `🎯 **ZENITH HUNTER: ${tierLabel}**\n` +
+          `🔥 *Pattern:* ${signal.strategyType}\n` +
+          `🏆 *Score:* ${signal.hybridScore}/100 (${riskLabel})\n\n` +
+          `${signal.report}`, 
+          { 
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true 
+          }
+        );
+      }
+      
+      const successMsg = `✅ **Hunter: Sesi selesai.** ${finalSignals.length} saham buruan (L1/L2) dikirim ke channel.`;
+      logger.success(successMsg);
+
+      if (manualChatId) {
+        const { sendNavigationMenu } = await import('./telegram.js');
+        await bot.sendMessage(manualChatId, successMsg, { parse_mode: 'Markdown' });
+        sendNavigationMenu(manualChatId);
       }
     }
-
-    if (result.success && result.strategyType) {
-      allResults.push(result);
+  } catch (err) {
+    logger.error('Hunter Process Error:', err);
+    if (manualChatId) {
+      bot.sendMessage(manualChatId, `❌ **Hunter Error:** ${err.message}`);
     }
-    await new Promise(r => setTimeout(r, 1500));
+  }
+}
+
+async function processHunterWithRetry(candidate, marketStatus) {
+  let result = { success: false, isBusy: false };
+  let retries = 2;
+  
+  while (retries > 0 && !result.success) {
+    result = await processHunterTicker(candidate, marketStatus);
+    if (!result.success && result.isBusy) {
+      await new Promise(r => setTimeout(r, 4000));
+      retries--;
+    } else {
+      break;
+    }
   }
 
-  // --- SELEKSI & PENGIRIMAN ---
-  // Kita pastikan minimal ada 1 dari L1 dan sisanya L2
-  const sortedSignals = allResults
-    .filter(r => r.hybridScore >= 60)
-    .sort((a, b) => b.hybridScore - a.hybridScore);
-
-  const finalSignals = sortedSignals.slice(0, 5);
-
-  if (finalSignals.length === 0) {
-    await bot.sendMessage(config.telegram.channelId,
-      `🎯 **ZENITH MARKET HUNTER (L1 & L2)**\n\n` +
-      `Sesi berburu selesai. Belum ada saham yang memenuhi standar teknikal minimal hari ini.\n\n` +
-      `💡 _Tetap pantau bursa, bank-bank besar biasanya bergerak saat IHSG mulai stabil._`,
-      { parse_mode: 'Markdown' }
-    );
-  } else {
-    for (const signal of finalSignals) {
-      const tierLabel = signal.tier === 'L1' ? "🏦 [L1 BLUECHIP/KONGLO]" : "🚀 [L2 MOMENTUM]";
-      const riskLabel = signal.hybridScore >= 75 ? "💎 PREMIUM" : "⚠️ MODERATE";
-      
-      await bot.sendMessage(config.telegram.channelId, 
-        `🎯 **ZENITH HUNTER: ${tierLabel}**\n` +
-        `🔥 *Pattern:* ${signal.strategyType}\n` +
-        `🏆 *Score:* ${signal.hybridScore}/100 (${riskLabel})\n\n` +
-        `${signal.report}`, 
-        { 
-          parse_mode: 'Markdown',
-          disable_web_page_preview: true 
-        }
-      );
-    }
-    logger.success(`Hunter: Sesi selesai. ${finalSignals.length} saham buruan (L1/L2) dikirim.`);
+  if (result.success && result.strategyType) {
+    return result;
   }
+  await new Promise(r => setTimeout(r, 1500));
+  return null;
 }
 
 function init(bot) {
