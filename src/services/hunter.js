@@ -147,17 +147,32 @@ async function runHunter(manualChatId = null) {
     const allResults = [];
 
     // 2. Process Tiers
-    logger.info(`Memproses ${l1Candidates.length} L1 & ${l2Candidates.length} L2 candidates...`);
+    const total = l1Candidates.length + l2Candidates.length;
+    let count = 0;
     
+    if (manualChatId) {
+      await bot.sendMessage(manualChatId, `🔍 **Processing ${total} candidates...**`);
+    }
+
     // Process L1
     for (const cand of l1Candidates) {
+      count++;
       const res = await processHunterWithRetry(cand, marketStatus);
+      if (manualChatId) {
+        const status = res ? `✅ **PROSES** (${res.hybridScore})` : "❌ SKIP";
+        await bot.sendMessage(manualChatId, `[${count}/${total}] $${cand} (L1): ${status}`);
+      }
       if (res) allResults.push({ ...res, tier: 'L1' });
     }
 
     // Process L2
     for (const cand of l2Candidates) {
+      count++;
       const res = await processHunterWithRetry(cand, marketStatus);
+      if (manualChatId) {
+        const status = res ? `✅ **PROSES** (${res.hybridScore})` : "❌ SKIP";
+        await bot.sendMessage(manualChatId, `[${count}/${total}] $${cand} (L2): ${status}`);
+      }
       if (res) allResults.push({ ...res, tier: 'L2' });
     }
 

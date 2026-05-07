@@ -545,5 +545,5 @@ function init(options = { polling: true }) {
 
 const getBot = () => bot;
 
-export { init, getBot };
-export default { init, getBot };
+export { init, getBot, sendNavigationMenu };
+export default { init, getBot, sendNavigationMenu };
