@@ -160,7 +160,7 @@ async function runHunter(manualChatId = null) {
       const res = await processHunterWithRetry(cand, marketStatus);
       if (manualChatId) {
         const status = res ? `✅ **PROSES** (${res.hybridScore})` : "❌ SKIP";
-        await bot.sendMessage(manualChatId, `[${count}/${total}] $${cand} (L1): ${status}`);
+        await bot.sendMessage(manualChatId, `[${count}/${total}] $${cand.ticker} (L1): ${status}`);
       }
       if (res) allResults.push({ ...res, tier: 'L1' });
     }
@@ -171,7 +171,7 @@ async function runHunter(manualChatId = null) {
       const res = await processHunterWithRetry(cand, marketStatus);
       if (manualChatId) {
         const status = res ? `✅ **PROSES** (${res.hybridScore})` : "❌ SKIP";
-        await bot.sendMessage(manualChatId, `[${count}/${total}] $${cand} (L2): ${status}`);
+        await bot.sendMessage(manualChatId, `[${count}/${total}] $${cand.ticker} (L2): ${status}`);
       }
       if (res) allResults.push({ ...res, tier: 'L2' });
     }
