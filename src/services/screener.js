@@ -5,8 +5,10 @@ import dbService from './database.js';
 import * as formatter from '../utils/formatter.js';
 import logger from '../utils/logger.js';
 import * as newsService from './news.js';
-import * as aiService from './ai.js';
+import aiService from './ai.js';
 import telegramService from './telegram.js';
+
+let botInstance;
 
 function isMarketOpen() {
   const now = new Date();
@@ -84,7 +86,7 @@ async function processTicker(ticker, marketStatus) {
 }
 
 async function runScreener() {
-  const bot = telegramService.getBot();
+  const bot = botInstance || telegramService.getBot();
   if (!isMarketOpen()) {
     logger.info('Pasar IDX sedang tutup atau hari libur. Auto-Screener dilewati.');
     return;
@@ -142,11 +144,14 @@ async function runScreener() {
   }
 }
 
-function init() {
+function init(bot) {
+  botInstance = bot;
   cron.schedule('0 * * * *', () => {
+    const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    logger.info(`[CRON] Heartbeat: Menjalankan Screener Otomatis (${now} WIB)`);
     runScreener();
   });
-  logger.info('Auto-Screener Service Initialized (Dynamic Database Mode)');
+  logger.info('Auto-Screener Service Initialized (Schedule: Setiap Jam)');
 }
 
 export { init };

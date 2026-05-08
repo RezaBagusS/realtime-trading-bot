@@ -22,12 +22,13 @@ function bootstrap() {
 
     // 2. Inisialisasi Bot Telegram
     telegramService.init();
+    const bot = telegramService.getBot();
     
     // 3. Inisialisasi Auto-Screener (Radar Pribadi)
-    screenerService.init(telegramService.bot);
+    screenerService.init(bot);
 
     // 4. Inisialisasi Market Hunter (Pencarian Global 15:30 WIB)
-    hunterService.init(telegramService.bot);
+    hunterService.init(bot);
 
     logger.success('Bot is live with Dynamic Watchlist support!');
   } catch (err) {

@@ -9,6 +9,8 @@ import aiService from './ai.js';
 import telegramService from './telegram.js';
 import dbService from './database.js';
 
+let botInstance;
+
 /**
  * Zenith Market Hunter Module
  * Berburu saham potensial di luar watchlist menggunakan kriteria Stockbit/Technical
@@ -132,8 +134,13 @@ async function processHunterTicker(candidate, marketStatus) {
 }
 
 async function runHunter(manualChatId = null) {
-  const bot = telegramService.getBot();
+  const bot = manualChatId ? telegramService.getBot() : (botInstance || telegramService.getBot());
   logger.info('🚀 Zenith Market Hunter v10: Memulai sesi berburu (L1 & L2)...');
+  
+  if (!bot) {
+    logger.error('Hunter: Gagal mendapatkan instansi Bot Telegram.');
+    return;
+  }
   
   try {
     const marketStatus = await tvService.getMarketStatus();
@@ -251,8 +258,12 @@ async function processHunterWithRetry(candidate, marketStatus) {
 }
 
 function init(bot) {
+  botInstance = bot;
+  
   // Jadwal: Setiap Senin-Jumat jam 15:30 WIB
   cron.schedule('30 15 * * 1-5', () => {
+    const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    logger.info(`[CRON] Heartbeat: Menjalankan Hunter Otomatis (${now} WIB)`);
     runHunter();
   }, {
     timezone: "Asia/Jakarta"
